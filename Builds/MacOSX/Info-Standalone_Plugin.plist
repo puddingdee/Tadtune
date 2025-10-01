@@ -8,7 +8,7 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourcompany.Tadtune</string>
+    <string>com.tadware.Tadtune</string>
     <key>CFBundleName</key>
     <string>Tadtune</string>
     <key>CFBundleDisplayName</key>

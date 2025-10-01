@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="lgeMPz" name="Tadtune" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="tadware">
   <MAINGROUP id="Np2YsZ" name="Tadtune">
     <GROUP id="{03D4AC1F-6CC2-B8D1-5B1B-ABAF89668E58}" name="Source">
+      <FILE id="Woy66a" name="PitchDetector.h" compile="0" resource="0" file="Source/PitchDetector.h"/>
       <FILE id="ENFbAT" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Xb09Sj" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
-      <FILE id="fPgDRn" name="PluginEditor.cpp" compile="1" resource="0"
-            file="Source/PluginEditor.cpp"/>
       <FILE id="Knvy9N" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
   </MAINGROUP>
