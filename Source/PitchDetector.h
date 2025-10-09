@@ -9,18 +9,23 @@ class PitchDetector
 public:
     PitchDetector() = default;
     
+    // initialize buffers
+    
     void prepare(double sampleRate, int maxPeriodSamples = 1760)
     {
         fs = sampleRate;
-        maxPeriod = maxPeriodSamples;
+        maxPeriod = maxPeriodSamples; // maximum period length to detect, affects low frequency limit
         
+        // tracking arrays store E(L) and H(L) values for current period area
         const int N = 12;
         E.resize(N, 0.0);
         H.resize(N, 0.0);
         
-        Edown.resize(150, 0.0);
-        Hdown.resize(150, 0.0);
+        // downsampled detection arrays store values for init pitch detection
+        Edown.resize(150, 0.0);// energy vals (downsampled)
+        Hdown.resize(150, 0.0);// correlation
         
+        // circular buffers store recent audio samples for analysis
         inputBuffer.resize(maxPeriod * 8, 0.0f);
         downsampledBuffer.resize(1024, 0.0f);
         
@@ -31,14 +36,15 @@ public:
     
     void reset()
     {
+        // vals to use when starting or when tracking is lost
         detectionMode = true;
         inputWritePos = 0;
         downSampleCounter = 0;
         downSampleWritePos = 0;
         cyclePeriod = 100.0;
-        EH_offset = 0;
+        EH_offset = 0; // current center period for tracking window
         downsampleAccumulator = 0.0f;
-        dcOffset = 0.0f;
+        dcOffset = 0.0f; // for highpass filter
         goodTrackingCount = 0;
         consecutiveBad = 0;
         
@@ -52,27 +58,36 @@ public:
     
     bool processSample(float sample)
     {
-        // Apply high-pass filter
+        // apply high-pass filter to avoid false low frequency detecting
         float filteredSample = highPassFilter(sample);
         
+        // store in circular buffer using modulo for wrap around
         inputBuffer[inputWritePos] = filteredSample;
         inputWritePos = (inputWritePos + 1) % inputBuffer.size();
         
+        
         if (detectionMode)
         {
+            // downsampling for detection
+            // reduce computational load by searching wide range after downsampling
             downsampleAccumulator += filteredSample;
             downSampleCounter++;
             
+            // downsample by a factor of 4
             if (downSampleCounter >= 4)
             {
+                // average 4 samples to create one downsampled sample & simple antialiasing filter
                 downsampledBuffer[downSampleWritePos] = downsampleAccumulator / 4.0f;
                 downSampleWritePos = (downSampleWritePos + 1) % downsampledBuffer.size();
                 
+                // reset for next downsampling block
                 downsampleAccumulator = 0.0f;
                 downSampleCounter = 0;
                 
                 if (downSampleWritePos > 300)
                 {
+                    
+                    // try detection periodically to balance cpu load vs responsiveness
                     if (downSampleWritePos % 4 == 0)
                     {
                         return detectPitch();
@@ -88,40 +103,59 @@ public:
         return false;
     }
     
-    /**
-     * IMPROVED: Compute normalized difference function (NDF)
-     * This is more robust than the E-2H approach
+    // NORMALIZED DIFFERENCE FUNCTION is the core pitch detection algorithm
+    // which measures similarity between segmentds of signal separated by period L
+    // returns 0 for perfect match and 1 for no correlation
+    /*
+     * Let x[n] be the signal, then we compare segments:
+     segment1: x[t-2L] to x[t-2L+L-1]
+     segment2: x[t-L] to x[t-L+L-1]
+     the normalized correlation = sum(x1*x2) / sqrt(sum(x1^2) * sum(x2^2))
+     
+     
      */
     double computeDifference(int L, const std::vector<float>& buffer, int writePos)
     {
-        if (L <= 0) return 1.0;
+        if (L <= 0) return 1.0; // invalid period
         
         double sumXX = 0.0, sumYY = 0.0, sumXY = 0.0;
         int bufSize = buffer.size();
         
+        // compute for 2 consecutive segments of length L
         for (int k = 0; k < L; k++)
         {
+            // calculate buffer indices with wrap around using modulo
+            // the +10 ensures we stay positive before modulo
             int idx1 = (writePos - 2 * L + k + 10 * bufSize) % bufSize;
             int idx2 = (writePos - L + k + 10 * bufSize) % bufSize;
             
             float x = buffer[idx1];
             float y = buffer[idx2];
             
-            sumXX += x * x;
-            sumYY += y * y;
-            sumXY += x * y;
+            // accumulate stats for normalized coreelation
+            sumXX += x * x; // energy of first segment
+            sumYY += y * y; // energy of second segment
+            sumXY += x * y; // cross correlation between segments
         }
         
         // Normalized Difference Function
+        // by geometric mean
         double denominator = std::sqrt(sumXX * sumYY);
         if (denominator < 1e-10) return 1.0;
         
+        // pearson correlation coefficient between the two segments
         double correlation = sumXY / denominator;
         return 1.0 - correlation;  // 0 = perfect correlation, 1 = no correlation
     }
-    
-    /**
-     * Backward compatibility - keep original for tracking
+    /*
+     ENERGY COMPUTATION: calculate E(L) = average energy of two consecutive segments
+     used in tracking mode with the E-2H minimization
+     
+     E(L) = (1/L) * Σ [x₁²(k) + x₂²(k)] for k=0 to L-1
+     where x₁ = segment [t-2L, t-2L+L-1], x₂ = segment [t-L, t-1]
+     
+     L is period candidate length in samples
+     returns normalized energy measure
      */
     double computeE(int L, const std::vector<float>& buffer, int writePos)
     {
@@ -138,11 +172,22 @@ public:
             float x1 = buffer[idx1];
             float x2 = buffer[idx2];
             
+            // sum of squares gives energy of both segments
             sum += x1 * x1 + x2 * x2;
         }
-        return sum / L;
+        return sum / L; //normalize by length to compare across different L
     }
     
+    /*
+     CORRELATION COMPUTATION:  calculate H(L) = average cross-correlation between segments
+     used in tracking mode with the E-2H minimization approach
+     
+     H(L) = (1/L) * Σ [x₁(k) * x₂(k)] for k=0 to L-1
+     measures how similar the two segments are
+     
+     L is period candidate length in samples
+     returns normalized correlation measure
+     */
     double computeH(int L, const std::vector<float>& buffer, int writePos)
     {
         if (L <= 0) return 0.0;
@@ -155,22 +200,38 @@ public:
             int idx1 = (writePos - 2 * L + k + 10 * bufSize) % bufSize;
             int idx2 = (writePos - L + k + 10 * bufSize) % bufSize;
             
+            // cross correlation measures similarity between segments
             sum += buffer[idx1] * buffer[idx2];
         }
         return sum / L;
     }
     
+    /*
+     PITCH DETECTION using normalized difference function
+     searches for period L that minimizes the difference between consecutive segments
+     includes octave correction to avoid harmonic errors
+     
+     steps:
+     1. compute difference function for all candidate periods
+     2. find period with minimum difference (best correlation)
+     3. apply octave correction to find true fundamental
+     4. validate frequency range and initialize tracking
+     
+     returns true if pitch is successfully detectd, false otherwise
+     */
+    
     bool detectPitch()
     {
-        // Use NDF for more robust detection
+        // storage for difference function vals
         std::vector<double> differences(110, 1.0);
         double minDifference = 1.0;
         int bestL = -1;
         
-        // Compute normalized difference function
-        for (int L = 20; L < 100; L++)  // Focus on reasonable range
+        //compute difference function for candidate periods
+        for (int L = 20; L < 100; L++)  // Focus on reasonable range, covers 176-880Hz at 44.1
         {
             differences[L] = computeDifference(L, downsampledBuffer, downSampleWritePos);
+            //get best
             if (differences[L] < minDifference)
             {
                 minDifference = differences[L];
@@ -178,10 +239,11 @@ public:
             }
         }
         
-        // Check if we found a good candidate
-        if (bestL > 0 && minDifference < 0.3)  // Good correlation threshold
+        // check if periodic signal is found
+        // threshold at 0.3 means 70% correlation between segments is good
+        if (bestL > 0 && minDifference < 0.3)
         {
-            // CRITICAL FIX: Check for octave errors by testing integer divisors
+            // octave error correction: the detected period might be a multiple of the true fundamental
             int fundamentalL = bestL;
             double fundamentalDiff = minDifference;
             
@@ -189,12 +251,13 @@ public:
             for (int divisor = 2; divisor <= 6; divisor++)
             {
                 int testL = bestL / divisor;
-                if (testL >= 15)  // Reasonable minimum period
+                if (testL >= 15)  // reasonable minimum period
                 {
                     double testDiff = computeDifference(testL, downsampledBuffer, downSampleWritePos);
                     
-                    // If the divisor period has similar or better correlation, use it
-                    if (testDiff < fundamentalDiff * 1.2)  // Allow slightly worse
+                    // if divisor period has similar correlation, it might be fundamental
+                    // the *1.2 allows slightly worse correlation for shorter periods
+                    if (testDiff < fundamentalDiff * 1.2)
                     {
                         fundamentalL = testL;
                         fundamentalDiff = testDiff;
@@ -203,20 +266,21 @@ public:
                 }
             }
             
-            // Convert to full sample rate
+            // convert downsampled period to full sample rate period
+            // we downsampled by 4, so multiply by 4
             int fullRatePeriod = 4 * fundamentalL;
             double detectedFreq = fs / fullRatePeriod;
             
             DBG("Detection: L=" << fundamentalL << ", period=" << fullRatePeriod << ", freq=" << detectedFreq << "Hz, diff=" << fundamentalDiff);
             
-            // Validate frequency range
+            // validate that detected frequency is in reasonable vocal range
             if (detectedFreq < 100.0 || detectedFreq > 900.0)
             {
                 DBG("Frequency out of range: " << detectedFreq << "Hz");
                 return false;
             }
             
-            // Initialize tracking with the found period
+            // initialize tracking with the found period
             initializeTracking(fullRatePeriod);
             return true;
         }
@@ -224,11 +288,22 @@ public:
         return false;
     }
     
+    /*
+     initialize tracking sets up tracing arrays around detected period
+     creates a window of E(L) and H(L) values centered on the detected period for tracking small period variations
+     */
     void initializeTracking(int period)
     {
         const int N = E.size();
+        
+        // center the tracking window around the detected period
+        // EH_offset represents the smallest period in our tracking window
+        
         EH_offset = period - N / 2;
         if (EH_offset < 20) EH_offset = 20;
+        
+        //pre compute E and H vals for all periods in tracking window
+        // this gives us local landscape to find a precise minimum
         
         for (int i = 0; i < N; i++)
         {
@@ -237,20 +312,29 @@ public:
             H[i] = computeH(L, inputBuffer, inputWritePos);
         }
         
+        // set init state for tracking mode
         cyclePeriod = static_cast<double>(period);
         detectionMode = false;
-        goodTrackingCount = 10;  // Start with some confidence
+        goodTrackingCount = 10;  // start with some confidence
         consecutiveBad = 0;
         
         double freq = fs / period;
         DBG("Tracking initialized: " << freq << "Hz, period=" << period);
     }
     
+    /*
+     PITCH TRACKING: refine and follow pitch using E-2H minimization
+     once pitch is detected, this method tracks small variations using local search
+     
+     E(L) measures total energy, H(L) measures correlation
+     when segments are perfectly periodic: E(L) ≈ 2H(L), so E(L)-2H(L) ≈ 0
+     */
     bool trackPitch()
     {
         const int N = E.size();
         
-        // Update E and H arrays
+        //update E and H arrays with current audio data
+        // this maintains a sliding window of period candidates
         for (int i = 0; i < N; i++)
         {
             int L = EH_offset + i;
@@ -278,22 +362,26 @@ public:
             return switchToDetection();
         }
         
-        // SIMPLIFIED VALIDATION
+        // TRACKING VALIDATION: chack if we still have good periodicity
+        // ratio = (E-2H)/E measures how close we are to perfect periodicity
+        // perfect periodicity: E ≈ 2H, so ratio ≈ 0
         if (E[minIdx] > 1e-8)
         {
             double ratio = minVal / E[minIdx];
             
-            if (ratio < 0.3)  // Good frame
+            if (ratio < 0.3)  // good periodicity (at least 70% correlation)
             {
                 goodTrackingCount++;
                 consecutiveBad = 0;
             }
-            else  // Bad frame
+            else // bad periodicity
             {
                 consecutiveBad++;
                 goodTrackingCount = std::max(0, goodTrackingCount - 1);
                 
-                if (consecutiveBad > 30)  // Much more tolerant
+                //only switch back to detection after many consecutive failures
+                //this provides hysteresis to prevent mode bouncing
+                if (consecutiveBad > 35)
                 {
                     DBG("Tracking lost after " << consecutiveBad << " bad frames");
                     return switchToDetection();
@@ -301,7 +389,7 @@ public:
             }
         }
         
-        // Shift arrays if needed (more conservative)
+        // adaptive window shifting
         if (minIdx <= 1 && EH_offset > 30)
         {
             shiftArraysLeft();
@@ -311,11 +399,12 @@ public:
             shiftArraysRight();
         }
         
-        // Update period with validation
+        // subsample interpolation
+        // find precise peeriod between integer samples
         double Pmin = interpolateMinimum(minIdx);
         double newPeriod = EH_offset + Pmin;
         
-        // Validate period change
+        // validate period change, prevent unrealistic jumps
         if (cyclePeriod > 10.0)
         {
             double ratio = newPeriod / cyclePeriod;
@@ -366,6 +455,14 @@ public:
         return false;
     }
     
+    // PARABOLIC INTERPOLATION: find subsample minimum for higher precision. fits a parabola through three points and finds the precise minimum location
+    /*
+     Given three points (x₀,y₀), (x₁,y₁), (x₂,y₂) where x₁=0, x₂=1
+          * The parabola equation: y = ax² + bx + c
+          * The minimum occurs at x = -b/(2a)
+     
+     returns interpolated subsample position of the minimum
+     */
     double interpolateMinimum(int idx)
     {
         const int N = E.size();
