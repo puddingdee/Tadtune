@@ -11,7 +11,7 @@ public:
         : AudioProcessorEditor(&p), audioProcessor(p)
     {
         // Set window size
-        setSize(400, 300);
+        setSize(400, 350);
         
         // Start timer to update UI at 30 Hz (every ~33ms)
         startTimerHz(30);
@@ -35,13 +35,15 @@ public:
         // Title
         g.setColour(juce::Colours::white);
         g.setFont(24.0f);
-        g.drawText("Pitch Detector", bounds.removeFromTop(50),
+        g.drawText("Tadtune - 1256", bounds.removeFromTop(50),
                    juce::Justification::centred);
         
         // Get current values from processor
         float freq = audioProcessor.getCurrentFrequency();
+        float targetFreq = audioProcessor.getTargetFrequency();
         float period = audioProcessor.getCurrentPeriod();
         bool detecting = audioProcessor.isInDetectionMode();
+        float resampleRate = audioProcessor.getResampleRate();
         
         // Status indicator
         auto statusArea = bounds.removeFromTop(40);
@@ -55,26 +57,30 @@ public:
         else
         {
             g.setColour(juce::Colours::green);
-            g.drawText("TRACKING", statusArea, juce::Justification::centred);
+            g.drawText("CORRECTING PITCH", statusArea, juce::Justification::centred);
         }
-        
-        bounds.removeFromTop(20);
-        
-        // Frequency display
-        auto freqArea = bounds.removeFromTop(80);
-        drawFrequencyDisplay(g, freqArea, freq);
-        
-        bounds.removeFromTop(20);
-        
-        // Note name display
-        auto noteArea = bounds.removeFromTop(60);
-        drawNoteDisplay(g, noteArea, freq);
         
         bounds.removeFromTop(10);
         
-        // Period display (technical info)
-        auto periodArea = bounds.removeFromTop(30);
-        drawPeriodDisplay(g, periodArea, period);
+        // Current frequency display
+        auto freqArea = bounds.removeFromTop(60);
+        drawFrequencyDisplay(g, freqArea, freq, "Current Frequency");
+        
+        // Target frequency display
+        auto targetArea = bounds.removeFromTop(60);
+        drawFrequencyDisplay(g, targetArea, targetFreq, "Target Frequency");
+        
+        bounds.removeFromTop(10);
+        
+        // Note name display
+        auto noteArea = bounds.removeFromTop(60);
+        drawNoteDisplay(g, noteArea, freq, targetFreq);
+        
+        bounds.removeFromTop(10);
+        
+        // Correction info
+        auto infoArea = bounds.removeFromTop(40);
+        drawCorrectionInfo(g, infoArea, resampleRate, period);
     }
 
     void resized() override
@@ -87,44 +93,20 @@ private:
     // HELPER DRAWING METHODS
     //==========================================================================
     
-    void drawFrequencyDisplay(juce::Graphics& g, juce::Rectangle<int> area, float freq)
+    void drawFrequencyDisplay(juce::Graphics& g, juce::Rectangle<int> area, float freq, const juce::String& label)
     {
         g.setColour(juce::Colours::lightgrey);
         g.setFont(14.0f);
-        g.drawText("Frequency:", area.removeFromTop(20),
+        g.drawText(label, area.removeFromTop(20),
                    juce::Justification::centred);
         
         // Draw frequency in large font
         if (freq > 0.0f && freq < 5000.0f)
         {
             g.setColour(juce::Colours::cyan);
-            g.setFont(48.0f);
+            g.setFont(32.0f);
             juce::String freqText = juce::String(freq, 1) + " Hz";
             g.drawText(freqText, area, juce::Justification::centred);
-        }
-        else
-        {
-            g.setColour(juce::Colours::darkgrey);
-            g.setFont(32.0f);
-            g.drawText("---", area, juce::Justification::centred);
-        }
-    }
-    
-    void drawNoteDisplay(juce::Graphics& g, juce::Rectangle<int> area, float freq)
-    {
-        int midiNote = audioProcessor.frequencyToMidiNote(freq);
-        juce::String noteName = audioProcessor.midiNoteToName(midiNote);
-        
-        g.setColour(juce::Colours::lightgrey);
-        g.setFont(14.0f);
-        g.drawText("Note:", area.removeFromTop(20),
-                   juce::Justification::centred);
-        
-        if (midiNote >= 0)
-        {
-            g.setColour(juce::Colours::yellow);
-            g.setFont(36.0f);
-            g.drawText(noteName, area, juce::Justification::centred);
         }
         else
         {
@@ -134,20 +116,65 @@ private:
         }
     }
     
-    void drawPeriodDisplay(juce::Graphics& g, juce::Rectangle<int> area, float period)
+    void drawNoteDisplay(juce::Graphics& g, juce::Rectangle<int> area, float currentFreq, float targetFreq)
+    {
+        int currentMidiNote = audioProcessor.frequencyToMidiNote(currentFreq);
+        int targetMidiNote = audioProcessor.frequencyToMidiNote(targetFreq);
+        juce::String currentNoteName = audioProcessor.midiNoteToName(currentMidiNote);
+        juce::String targetNoteName = audioProcessor.midiNoteToName(targetMidiNote);
+        
+        g.setColour(juce::Colours::lightgrey);
+        g.setFont(14.0f);
+        g.drawText("Note Correction:", area.removeFromTop(20),
+                   juce::Justification::centred);
+        
+        auto noteDisplayArea = area.reduced(20, 0);
+        
+        if (currentMidiNote >= 0 && targetMidiNote >= 0)
+        {
+            // Current note
+            g.setColour(juce::Colours::yellow);
+            g.setFont(20.0f);
+            g.drawText(currentNoteName, noteDisplayArea.removeFromLeft(100),
+                       juce::Justification::centred);
+            
+            // Arrow
+            g.setColour(juce::Colours::white);
+            g.setFont(24.0f);
+            g.drawText("->", noteDisplayArea.withWidth(40),
+                       juce::Justification::centred);
+            
+            // Target note
+            g.setColour(juce::Colours::limegreen);
+            g.setFont(24.0f);
+            g.drawText(targetNoteName, noteDisplayArea.withLeft(noteDisplayArea.getX() + 40),
+                       juce::Justification::centred);
+        }
+        else
+        {
+            g.setColour(juce::Colours::darkgrey);
+            g.setFont(24.0f);
+            g.drawText("--- -> ---", area, juce::Justification::centred);
+        }
+    }
+    
+    void drawCorrectionInfo(juce::Graphics& g, juce::Rectangle<int> area, float resampleRate, float period)
     {
         g.setColour(juce::Colours::grey);
         g.setFont(12.0f);
         
-        if (period > 0.0f)
+        juce::String infoText;
+        if (period > 0.0f && std::abs(resampleRate - 1.0f) > 0.01f)
         {
-            juce::String periodText = "Period: " + juce::String(period, 2) + " samples";
-            g.drawText(periodText, area, juce::Justification::centred);
+            float cents = 1200.0f * std::log2(resampleRate);
+            infoText = "Correcting: " + juce::String(cents, 1) + " cents";
         }
         else
         {
-            g.drawText("Period: ---", area, juce::Justification::centred);
+            infoText = "No correction applied";
         }
+        
+        g.drawText(infoText, area, juce::Justification::centred);
     }
     
     //==========================================================================
