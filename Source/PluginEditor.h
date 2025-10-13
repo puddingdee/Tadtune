@@ -35,15 +35,14 @@ public:
         // Title
         g.setColour(juce::Colours::white);
         g.setFont(24.0f);
-        g.drawText("Tadtune - 1256", bounds.removeFromTop(50),
+        g.drawText("Tadtune - Phase Vocoder 1049", bounds.removeFromTop(50),
                    juce::Justification::centred);
         
         // Get current values from processor
         float freq = audioProcessor.getCurrentFrequency();
         float targetFreq = audioProcessor.getTargetFrequency();
-        float period = audioProcessor.getCurrentPeriod();
         bool detecting = audioProcessor.isInDetectionMode();
-        float resampleRate = audioProcessor.getResampleRate();
+        float pitchRatio = audioProcessor.getPitchRatio();
         
         // Status indicator
         auto statusArea = bounds.removeFromTop(40);
@@ -80,7 +79,7 @@ public:
         
         // Correction info
         auto infoArea = bounds.removeFromTop(40);
-        drawCorrectionInfo(g, infoArea, resampleRate, period);
+        drawCorrectionInfo(g, infoArea, pitchRatio);
     }
 
     void resized() override
@@ -141,7 +140,7 @@ private:
             // Arrow
             g.setColour(juce::Colours::white);
             g.setFont(24.0f);
-            g.drawText("->", noteDisplayArea.withWidth(40),
+            g.drawText("→", noteDisplayArea.withWidth(40),
                        juce::Justification::centred);
             
             // Target note
@@ -154,20 +153,22 @@ private:
         {
             g.setColour(juce::Colours::darkgrey);
             g.setFont(24.0f);
-            g.drawText("--- -> ---", area, juce::Justification::centred);
+            g.drawText("--- → ---", area, juce::Justification::centred);
         }
     }
     
-    void drawCorrectionInfo(juce::Graphics& g, juce::Rectangle<int> area, float resampleRate, float period)
+    void drawCorrectionInfo(juce::Graphics& g, juce::Rectangle<int> area, float pitchRatio)
     {
         g.setColour(juce::Colours::grey);
         g.setFont(12.0f);
         
         juce::String infoText;
-        if (period > 0.0f && std::abs(resampleRate - 1.0f) > 0.01f)
+        if (std::abs(pitchRatio - 1.0f) > 0.01f)
         {
-            float cents = 1200.0f * std::log2(resampleRate);
-            infoText = "Correcting: " + juce::String(cents, 1) + " cents";
+            // Calculate cents from pitch ratio
+            float cents = 1200.0f * std::log2(pitchRatio);
+            infoText = "Correcting: " + juce::String(cents, 1) + " cents (ratio: "
+                     + juce::String(pitchRatio, 3) + ")";
         }
         else
         {

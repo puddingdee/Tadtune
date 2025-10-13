@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "PitchDetector.h"
+#include "PhaseVocoder.h"
 
 class TadtuneAudioProcessor : public juce::AudioProcessor
 {
@@ -30,31 +31,20 @@ public:
         // Initialize the pitch detector for this sample rate
         pitchDetector.prepare(sampleRate);
         
-        // Initialize pitch correction with reasonable buffer sizes
-        currentSampleRate = sampleRate;
-        resampleRate = 1.0;
-        smoothedResampleRate = 1.0;
-        outputAddress = 0.0;
+        // Initialize phase vocoder with smaller FFT for lower latency (faster snap)
+        phaseVocoder.prepare(sampleRate, 1024);  // Use 1024 for T-Pain effect, 2048 for smooth
         
-        // Larger buffer for better cycle management (but still reasonable latency)
-        inputBuffer.resize(8192); // ~186ms at 44.1kHz for better low frequency handling
-        std::fill(inputBuffer.begin(), inputBuffer.end(), 0.0f);
-        inputWritePos = 0;
+        currentSampleRate = sampleRate;
         
         // Reset detection state
         currentFrequency.store(0.0f);
         isDetecting.store(true);
         targetFrequency.store(0.0f);
-        lastValidPeriod = 100.0;
+        currentPitchRatio.store(1.0f);
         
-        // Initialize crossfade buffers for click-free transitions
-        crossfadeBuffer.resize(256, 0.0f);
-        crossfadeActive = false;
-        crossfadePosition = 0;
-        
-        // Initialize period change smoothing
-        lastPeriod = 100.0;
-        periodSmoothingCoeff = 0.95f;
+        // Smoothing for pitch ratio changes
+        smoothedPitchRatio = 1.0f;
+        pitchRatioSmoothingCoeff = 0.0f;  // 0.0 = instant snap (T-Pain), 0.98 = smooth natural
     }
 
     void releaseResources() override
@@ -74,7 +64,7 @@ public:
         
         // Clear any output channels that don't contain input data
         for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-            buffer.clear (i, 0, buffer.getNumSamples());
+            buffer.clear(i, 0, buffer.getNumSamples());
 
         // Get the left channel (we'll process mono for pitch detection)
         auto* channelData = buffer.getReadPointer(0);
@@ -83,72 +73,52 @@ public:
         // Process each sample through the pitch detector
         for (int i = 0; i < numSamples; ++i)
         {
+            //stores samples in circular buffer
             float sample = channelData[i];
-            
-            // Store in input buffer for pitch correction
-            inputBuffer[inputWritePos] = sample;
-            inputWritePos = (inputWritePos + 1) % inputBuffer.size();
-            
-            // Feed sample to detector
             pitchDetector.processSample(sample);
         }
         
-        // Update pitch correction parameters ONCE per block
-        float freq = static_cast<float>(pitchDetector.getFrequency());
-        currentFrequency.store(freq);
-        float rawPeriod = static_cast<float>(pitchDetector.getCyclePeriod());
+        // Update pitch information ONCE per block
+        float detectedFreq = static_cast<float>(pitchDetector.getFrequency());
+        currentFrequency.store(detectedFreq);
         isDetecting.store(pitchDetector.isInDetectionMode());
         
-        // Calculate target frequency and resample rate if we have valid pitch
-        if (freq > 70.0f && freq < 1200.0f && !pitchDetector.isInDetectionMode())
+        // Calculate target frequency and pitch shift ratio
+        float targetPitchRatio = 1.0f;
+        
+        if (detectedFreq > 70.0f && detectedFreq < 1200.0f && !pitchDetector.isInDetectionMode())
         {
-            float targetFreq = findNearestChromaticFrequency(freq);
+            float targetFreq = findNearestChromaticFrequency(detectedFreq);
             targetFrequency.store(targetFreq);
             
-            float targetPeriod = currentSampleRate / targetFreq;
+            // Calculate pitch shift ratio
+            // Ratio > 1.0 means shift up, < 1.0 means shift down
+            targetPitchRatio = targetFreq / detectedFreq;
             
-            // Smooth period changes to reduce artifacts
-            float smoothedPeriod = lastPeriod * periodSmoothingCoeff + rawPeriod * (1.0f - periodSmoothingCoeff);
-            lastPeriod = smoothedPeriod;
+            // Clamp to reasonable range
+            targetPitchRatio = std::max(0.75f, std::min(1.35f, targetPitchRatio));
             
-            if (smoothedPeriod > 30.0f && smoothedPeriod < 600.0f)
-            {
-                lastValidPeriod = smoothedPeriod;
-                currentPeriod.store(smoothedPeriod);
-                
-                // Calculate new resample rate
-                float newResampleRate = smoothedPeriod / targetPeriod;
-                
-                // TIGHTER clamping to prevent extreme values that cause distortion
-                newResampleRate = std::max(0.75f, std::min(1.35f, newResampleRate));
-                
-                // Detect significant rate changes and trigger crossfade
-                if (std::abs(newResampleRate - resampleRate) > 0.05f && !crossfadeActive)
-                {
-                    // Start crossfade to prevent clicks
-                    startCrossfade();
-                }
-                
-                resampleRate = newResampleRate;
-                // Apply gentle smoothing to resample rate for instant but click-free correction
-                smoothedResampleRate = smoothedResampleRate * 0.9f + resampleRate * 0.1f;
-                
-                DBG("Correction - Current: " << freq << " Target: " << targetFreq << " Rate: " << smoothedResampleRate);
-            }
-            else
-            {
-                smoothedResampleRate = 1.0f;
-            }
+            DBG("Detected: " << detectedFreq << " Hz -> Target: " << targetFreq
+                << " Hz (ratio: " << targetPitchRatio << ")");
         }
         else
         {
-            // No pitch detected or in detection mode - pass through
-            smoothedResampleRate = 1.0f;
+            // No valid pitch detected - bypass
             targetFrequency.store(0.0f);
+            targetPitchRatio = 1.0f;
         }
         
-        // Apply pitch correction to the output
-        applyPitchCorrection(buffer);
+        // Smooth the pitch ratio to avoid artifacts
+        smoothedPitchRatio = smoothedPitchRatio * pitchRatioSmoothingCoeff
+                           + targetPitchRatio * (1.0f - pitchRatioSmoothingCoeff);
+        
+        currentPitchRatio.store(smoothedPitchRatio);
+        
+        // Update phase vocoder with new pitch shift ratio
+        phaseVocoder.setPitchShiftRatio(smoothedPitchRatio);
+        
+        // Process audio through phase vocoder
+        applyPhaseVocoderCorrection(buffer);
     }
 
     //==========================================================================
@@ -168,153 +138,31 @@ public:
         return 440.0f * std::pow(2.0f, (roundedNote - 69.0f) / 12.0f);
     }
     
-    /** Start crossfade to prevent clicks when pitch changes */
-    void startCrossfade()
-    {
-        // Capture current output for crossfading
-        int captureLength = std::min(256, (int)inputBuffer.size());
-        for (int i = 0; i < captureLength; ++i)
-        {
-            crossfadeBuffer[i] = cubicInterpolate(outputAddress);
-            outputAddress += smoothedResampleRate;
-            if (outputAddress >= inputBuffer.size())
-                outputAddress -= inputBuffer.size();
-        }
-        
-        crossfadeActive = true;
-        crossfadePosition = 0;
-        
-        // Reset output address to current input position for phase continuity
-        outputAddress = static_cast<float>(inputWritePos) - lastValidPeriod * 2.0f;
-        while (outputAddress < 0) outputAddress += inputBuffer.size();
-        while (outputAddress >= inputBuffer.size()) outputAddress -= inputBuffer.size();
-    }
-    
-    /** Apply pitch correction using time-domain resampling with cycle alignment */
-    void applyPitchCorrection(juce::AudioBuffer<float>& buffer)
+    /** Apply pitch correction using phase vocoder */
+    void applyPhaseVocoderCorrection(juce::AudioBuffer<float>& buffer)
     {
         int numSamples = buffer.getNumSamples();
-        int bufferSize = inputBuffer.size();
+        int numChannels = buffer.getNumChannels();
         
-        // If we're in detection mode or no valid pitch, just pass through
-        if (pitchDetector.isInDetectionMode() || std::abs(smoothedResampleRate - 1.0f) < 0.01f)
-        {
-            // Simple pass-through
-            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-            {
-                if (channel == 0) continue;
-                buffer.copyFrom(channel, 0, buffer, 0, 0, numSamples);
-            }
-            return;
-        }
+        // Process left channel through phase vocoder
+        auto* leftChannel = buffer.getWritePointer(0);
         
-        // Get current cycle period for pitch correction
-        double currentPeriod = pitchDetector.getCyclePeriod();
-        if (currentPeriod < 30.0 || currentPeriod > 600.0)
-        {
-            // Invalid period - pass through
-            smoothedResampleRate = 1.0f;
-            return;
-        }
-        
-        // Process each sample with click-free pitch correction
         for (int i = 0; i < numSamples; ++i)
         {
-            float outputSample;
+            float input = leftChannel[i];
+            float output = phaseVocoder.processSample(input);
             
-            // Handle crossfade if active
-            if (crossfadeActive)
-            {
-                float newSample = cubicInterpolate(outputAddress);
-                float oldSample = crossfadeBuffer[crossfadePosition];
-                
-                // Linear crossfade
-                float fadeAmount = static_cast<float>(crossfadePosition) / 256.0f;
-                outputSample = oldSample * (1.0f - fadeAmount) + newSample * fadeAmount;
-                
-                crossfadePosition++;
-                if (crossfadePosition >= 256)
-                {
-                    crossfadeActive = false;
-                    crossfadePosition = 0;
-                }
-            }
-            else
-            {
-                // Normal interpolation with cubic for smoother result
-                outputSample = cubicInterpolate(outputAddress);
-            }
+            // Soft clipping to prevent harsh distortion
+            output = std::tanh(output * 0.9f);
             
-            // Write to all output channels with CLAMPING to prevent clipping
-            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-            {
-                // Clamp to prevent distortion
-                float clampedSample = std::max(-0.99f, std::min(0.99f, outputSample));
-                buffer.getWritePointer(channel)[i] = clampedSample;
-            }
-            
-            // Move output pointer
-            outputAddress += smoothedResampleRate;
-            
-            // Wrap buffer address with proper cycle alignment
-            while (outputAddress >= bufferSize)
-            {
-                outputAddress -= bufferSize;
-            }
-            while (outputAddress < 0.0f)
-            {
-                outputAddress += bufferSize;
-            }
-            
-            // Maintain proper distance from write pointer to prevent buffer overrun/underrun
-            float distanceFromWrite = inputWritePos - outputAddress;
-            if (distanceFromWrite < 0) distanceFromWrite += bufferSize;
-            
-            // Target distance is 2 periods behind write head
-            float targetDistance = lastValidPeriod * 2.0f;
-            float maxDistance = bufferSize * 0.8f;
-            float minDistance = lastValidPeriod * 1.5f;
-            
-            // Gradual correction if we drift too far
-            if (distanceFromWrite > maxDistance)
-            {
-                // We're too far behind, speed up slightly
-                outputAddress += 0.5f;
-            }
-            else if (distanceFromWrite < minDistance)
-            {
-                // We're too close, slow down slightly
-                outputAddress -= 0.5f;
-            }
+            leftChannel[i] = output;
         }
-    }
-    
-    /** Cubic interpolation for smoother pitch shifting without aliasing */
-    float cubicInterpolate(float address)
-    {
-        int bufferSize = inputBuffer.size();
         
-        int idx1 = static_cast<int>(std::floor(address));
-        float frac = address - idx1;
-        
-        // Get 4 points for cubic interpolation
-        int idx0 = (idx1 - 1 + bufferSize) % bufferSize;
-        idx1 = idx1 % bufferSize;
-        int idx2 = (idx1 + 1) % bufferSize;
-        int idx3 = (idx1 + 2) % bufferSize;
-        
-        float y0 = inputBuffer[idx0];
-        float y1 = inputBuffer[idx1];
-        float y2 = inputBuffer[idx2];
-        float y3 = inputBuffer[idx3];
-        
-        // 4-point cubic interpolation (Catmull-Rom)
-        float c0 = y1;
-        float c1 = 0.5f * (y2 - y0);
-        float c2 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
-        float c3 = 0.5f * (y3 - y0) + 1.5f * (y1 - y2);
-        
-        return ((c3 * frac + c2) * frac + c1) * frac + c0;
+        // Copy left to other channels
+        for (int channel = 1; channel < numChannels; ++channel)
+        {
+            buffer.copyFrom(channel, 0, buffer, 0, 0, numSamples);
+        }
     }
 
     //==========================================================================
@@ -333,22 +181,16 @@ public:
         return targetFrequency.load();
     }
     
-    /** Get the current period in samples */
-    float getCurrentPeriod() const
-    {
-        return currentPeriod.load();
-    }
-    
     /** Check if in detection mode vs tracking mode */
     bool isInDetectionMode() const
     {
         return isDetecting.load();
     }
     
-    /** Get current resample rate */
-    float getResampleRate() const
+    /** Get current pitch shift ratio */
+    float getPitchRatio() const
     {
-        return smoothedResampleRate;
+        return currentPitchRatio.load();
     }
     
     /** Convert frequency to nearest MIDI note number */
@@ -408,28 +250,18 @@ private:
     // The pitch detector instance
     PitchDetector pitchDetector;
     
-    // Pitch correction variables
+    // Phase vocoder for pitch correction
+    PhaseVocoder phaseVocoder;
+    
+    // Audio parameters
     double currentSampleRate = 44100.0;
-    float resampleRate = 1.0f;
-    float smoothedResampleRate = 1.0f;
-    float outputAddress = 0.0f;
-    float lastValidPeriod = 100.0f;
-    float lastPeriod = 100.0f;
-    float periodSmoothingCoeff = 0.95f;
-    
-    // Input buffer for pitch correction
-    std::vector<float> inputBuffer;
-    int inputWritePos = 0;
-    
-    // Crossfade buffers to eliminate clicks on pitch changes
-    std::vector<float> crossfadeBuffer;
-    bool crossfadeActive = false;
-    int crossfadePosition = 0;
+    float smoothedPitchRatio = 1.0f;
+    float pitchRatioSmoothingCoeff = 0.98f;
     
     // Thread-safe variables for communicating with UI
     std::atomic<float> currentFrequency { 0.0f };
     std::atomic<float> targetFrequency { 0.0f };
-    std::atomic<float> currentPeriod { 0.0f };
+    std::atomic<float> currentPitchRatio { 1.0f };
     std::atomic<bool> isDetecting { true };
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TadtuneAudioProcessor)
