@@ -32,7 +32,7 @@ public:
         pitchDetector.prepare(sampleRate);
         
         // Initialize phase vocoder with smaller FFT for lower latency (faster snap)
-        phaseVocoder.prepare(sampleRate, 1024);  // Use 1024 for T-Pain effect, 2048 for smooth
+        phaseVocoder.prepare(sampleRate, 1024);
         
         currentSampleRate = sampleRate;
         
@@ -44,7 +44,7 @@ public:
         
         // Smoothing for pitch ratio changes
         smoothedPitchRatio = 1.0f;
-        pitchRatioSmoothingCoeff = 0.0f;  // 0.0 = instant snap (T-Pain), 0.98 = smooth natural
+        pitchRatioSmoothingCoeff = 0.0f;  
     }
 
     void releaseResources() override
@@ -73,7 +73,6 @@ public:
         // Process each sample through the pitch detector
         for (int i = 0; i < numSamples; ++i)
         {
-            //stores samples in circular buffer
             float sample = channelData[i];
             pitchDetector.processSample(sample);
         }

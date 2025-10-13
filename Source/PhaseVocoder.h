@@ -2,41 +2,13 @@
 #include <JuceHeader.h>
 #include <vector>
 #include <cmath>
-/*
- For each frequency bin (e.g., bin 50 = 1076 Hz):
-   
-   1. Calculate magnitude and phase:
-      magnitude = sqrt(real² + imag²)
-      phase = atan2(imag, real)
-   
-   2. Compute phase difference from last frame:
-      phaseDiff = currentPhase - lastPhase
-   
-   3. Subtract expected phase advance:
-      expected = (bin_number × hop_size × 2π) / FFT_size
-      deviation = phaseDiff - expected
-   
-   4. Wrap deviation to [-π, π]
-   
-   5. Calculate TRUE frequency of this bin:
-      trueFreq = expected + deviation
-   
-   6. Apply pitch shift:
-      newFreq = trueFreq × pitchRatio  // ← The correction!
-      
-   7. Accumulate phase:
-      accumulatedPhase += newFreq
-   
-   8. Reconstruct complex value:
-      real = magnitude × cos(accumulatedPhase)
-      imag = magnitude × sin(accumulatedPhase)
- */
+
 class PhaseVocoder
 {
 public:
     PhaseVocoder() = default;
     
-    void prepare(double sampleRate, int fftSize = 1024)  
+    void prepare(double sampleRate, int fftSize = 1024)  // Smaller for faster response
     {
         fs = sampleRate;
         frameSize = fftSize;
