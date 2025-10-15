@@ -35,7 +35,7 @@ public:
         // Title
         g.setColour(juce::Colours::white);
         g.setFont(24.0f);
-        g.drawText("Tadtune - Phase Vocoder 1049", bounds.removeFromTop(50),
+        g.drawText("Tadtune - Phase Vocoder 610", bounds.removeFromTop(50),
                    juce::Justification::centred);
         
         // Get current values from processor

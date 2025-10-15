@@ -8,11 +8,11 @@ class PhaseVocoder
 public:
     PhaseVocoder() = default;
     
-    void prepare(double sampleRate, int fftSize = 1024)  // Smaller for faster response
+    void prepare(double sampleRate, int fftSize = 1024)
     {
         fs = sampleRate;
         frameSize = fftSize;
-        hopSize = frameSize / 4;  // 75% overlap for good quality
+        hopSize = frameSize / 4;  // 75% overlap
         
         // Initialize FFT
         fftOrder = (int)std::log2(frameSize);

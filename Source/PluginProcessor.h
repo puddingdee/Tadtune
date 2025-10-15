@@ -44,7 +44,7 @@ public:
         
         // Smoothing for pitch ratio changes
         smoothedPitchRatio = 1.0f;
-        pitchRatioSmoothingCoeff = 0.0f;  
+        pitchRatioSmoothingCoeff = 0.01;
     }
 
     void releaseResources() override
