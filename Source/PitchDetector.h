@@ -148,7 +148,7 @@ public:
 
     double computeE(int L, const std::vector<float>& buffer, int writePos)
     {
-        if (L <= 0 || L > 200) return 0.0;
+        if (L <= 0 || L > 400) return 0.0;
         
         double sum = 0.0;
         int bufSize = buffer.size();
@@ -170,7 +170,7 @@ public:
     
     double computeH(int L, const std::vector<float>& buffer, int writePos)
     {
-        if (L <= 0 || L > 200) return 0.0;
+        if (L <= 0 || L > 400) return 0.0;
         
         double sum = 0.0;
         int bufSize = buffer.size();
@@ -190,7 +190,7 @@ public:
     bool detectPitch()
     {
         // We need enough data in the input buffer
-        if (inputWritePos < 300) return false;
+        if (inputWritePos < 400) return false;
         
         double minDifference = 1.0;
         int bestL = -1;

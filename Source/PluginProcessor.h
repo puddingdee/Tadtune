@@ -137,6 +137,13 @@ public:
         return 440.0f * std::pow(2.0f, (roundedNote - 69.0f) / 12.0f);
     }
     
+    float findNearestScaleFrequency(float inputFreq)
+    {
+        float midiNote = 69.0f + 12.0f * std::log2(inputFreq / 440.0f);
+        int roundedNote = std::round(midiNote);
+        return 440.f * std::pow(2.0f, (roundedNote - 69.0f) / 12.f);
+    }
+    
     /** Apply pitch correction using phase vocoder */
     void applyPhaseVocoderCorrection(juce::AudioBuffer<float>& buffer)
     {
