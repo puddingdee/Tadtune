@@ -4,24 +4,35 @@
 #include <cmath>
 
 /**
- * Delay-Based Pitch Shifter
- * Uses variable delay with crossfading for pitch correction
- * Much simpler and lower latency than phase vocoder
+ * Simple Overlap-Add Time Stretcher with Resampling
+ * Based on SOLA (Synchronized Overlap-Add) principles
  */
 class DelayBasedPitchShifter
 {
 public:
     DelayBasedPitchShifter() = default;
     
-    void prepare(double sampleRate, int maxDelaySamples = 4096)
+    void prepare(double sampleRate, int maxDelaySamples = 8192)
     {
         fs = sampleRate;
         
-        // Allocate delay buffer (circular buffer)
-        delayBuffer.resize(maxDelaySamples, 0.0f);
+        // Input buffer
+        inputBuffer.resize(maxDelaySamples, 0.0f);
+        bufferSize = maxDelaySamples;
         
-        // Crossfade buffers for smooth transitions
-        crossfadeLength = 256;  // ~5.8ms at 44.1kHz
+        // Output FIFO
+        outputFifo.resize(maxDelaySamples * 2, 0.0f);
+        
+        // Grain parameters
+        grainSize = 1024;  // ~23ms at 44.1kHz
+        hopSize = 512;     // 50% overlap
+        
+        // Hann window
+        window.resize(grainSize);
+        for (int i = 0; i < grainSize; ++i)
+        {
+            window[i] = 0.5f * (1.0f - std::cos(2.0f * juce::MathConstants<float>::pi * i / grainSize));
+        }
         
         reset();
     }
@@ -29,125 +40,99 @@ public:
     void reset()
     {
         writePos = 0;
-        readPos1 = 0.0f;
-        readPos2 = crossfadeLength / 2.0f;
+        readPos = 0.0f;
+        outputReadPos = 0;
+        outputWritePos = grainSize;  // Start ahead
+        
+        samplesUntilNextGrain = hopSize;
         
         currentPitchRatio = 1.0f;
         targetPitchRatio = 1.0f;
         
-        crossfadePhase = 0.0f;
-        
-        std::fill(delayBuffer.begin(), delayBuffer.end(), 0.0f);
+        std::fill(inputBuffer.begin(), inputBuffer.end(), 0.0f);
+        std::fill(outputFifo.begin(), outputFifo.end(), 0.0f);
     }
     
     void setPitchShiftRatio(float ratio)
     {
-        // Clamp to reasonable range
-        targetPitchRatio = std::max(0.5f, std::min(2.0f, ratio));
+        targetPitchRatio = std::max(0.7f, std::min(1.4f, ratio));
     }
     
     float processSample(float inputSample)
     {
-        // Write input to delay buffer
-        delayBuffer[writePos] = inputSample;
+        // Write input to buffer
+        inputBuffer[writePos] = inputSample;
+        writePos = (writePos + 1) % bufferSize;
         
-        // Smooth the pitch ratio change
-        currentPitchRatio += (targetPitchRatio - currentPitchRatio) * 0.01f;
+        // Smooth ratio changes
+        currentPitchRatio += (targetPitchRatio - currentPitchRatio) * 0.005f;
         
-        // Calculate playback speed based on pitch ratio
-        // ratio > 1.0 = pitch up = read faster
-        // ratio < 1.0 = pitch down = read slower
-        float playbackSpeed = currentPitchRatio;
-        
-        // Read from two positions with crossfading
-        float output1 = readInterpolated(readPos1);
-        float output2 = readInterpolated(readPos2);
-        
-        // Advance read positions
-        readPos1 += playbackSpeed;
-        readPos2 += playbackSpeed;
-        
-        // Wrap read positions
-        while (readPos1 >= delayBuffer.size())
-            readPos1 -= delayBuffer.size();
-        while (readPos2 >= delayBuffer.size())
-            readPos2 -= delayBuffer.size();
-        
-        // Reset read head when it gets too close to write head
-        float distance1 = getDistanceFromWrite(readPos1);
-        float distance2 = getDistanceFromWrite(readPos2);
-        
-        // If a read head gets too close, reset it far away
-        float minDistance = crossfadeLength * 4;
-        float resetDistance = delayBuffer.size() * 0.5f;
-        
-        if (distance1 < minDistance)
+        // Check if it's time to process a new grain
+        samplesUntilNextGrain--;
+        if (samplesUntilNextGrain <= 0)
         {
-            readPos1 = writePos - resetDistance;
-            if (readPos1 < 0)
-                readPos1 += delayBuffer.size();
+            processGrain();
+            
+            // Calculate next hop based on pitch ratio
+            // For pitch up, we want shorter input hops (read faster)
+            // For pitch down, we want longer input hops (read slower)
+            float inputHop = hopSize / currentPitchRatio;
+            samplesUntilNextGrain = hopSize;  // Output hop is constant
+            readPos += inputHop;
+            
+            // Wrap read position
+            while (readPos >= bufferSize)
+                readPos -= bufferSize;
+            while (readPos < 0)
+                readPos += bufferSize;
         }
         
-        if (distance2 < minDistance)
-        {
-            readPos2 = writePos - resetDistance;
-            if (readPos2 < 0)
-                readPos2 += delayBuffer.size();
-        }
-        
-        // Crossfade between the two read heads
-        crossfadePhase += 1.0f / crossfadeLength;
-        if (crossfadePhase >= 1.0f)
-            crossfadePhase -= 1.0f;
-        
-        // Use equal-power crossfade
-        float gain1 = std::cos(crossfadePhase * juce::MathConstants<float>::halfPi);
-        float gain2 = std::sin(crossfadePhase * juce::MathConstants<float>::halfPi);
-        
-        float output = output1 * gain1 + output2 * gain2;
-        
-        // Advance write position
-        writePos = (writePos + 1) % delayBuffer.size();
+        // Read from output FIFO
+        float output = outputFifo[outputReadPos];
+        outputFifo[outputReadPos] = 0.0f;  // Clear after reading
+        outputReadPos = (outputReadPos + 1) % outputFifo.size();
         
         return output;
     }
     
 private:
-    // Linear interpolation for fractional delay reading
-    float readInterpolated(float position)
+    void processGrain()
     {
-        int index = static_cast<int>(position);
-        float frac = position - index;
+        // Extract grain from input buffer
+        int readStart = static_cast<int>(readPos);
         
-        int index1 = index % delayBuffer.size();
-        int index2 = (index + 1) % delayBuffer.size();
+        // Apply window and write to output with overlap-add
+        for (int i = 0; i < grainSize; ++i)
+        {
+            int inputIdx = (readStart + i) % bufferSize;
+            float sample = inputBuffer[inputIdx] * window[i];
+            
+            // Overlap-add to output
+            int outputIdx = (outputWritePos + i) % outputFifo.size();
+            outputFifo[outputIdx] += sample;
+        }
         
-        return delayBuffer[index1] * (1.0f - frac) + delayBuffer[index2] * frac;
-    }
-    
-    // Calculate distance from read position to write position
-    float getDistanceFromWrite(float readPosition)
-    {
-        int readIdx = static_cast<int>(readPosition);
-        int distance = writePos - readIdx;
-        
-        if (distance < 0)
-            distance += delayBuffer.size();
-        
-        return static_cast<float>(distance);
+        // Advance output write position by constant hop
+        outputWritePos = (outputWritePos + hopSize) % outputFifo.size();
     }
     
     // Member variables
     double fs = 44100.0;
-    std::vector<float> delayBuffer;
+    int bufferSize = 8192;
+    int grainSize = 1024;
+    int hopSize = 512;
+    
+    std::vector<float> inputBuffer;
+    std::vector<float> outputFifo;
+    std::vector<float> window;
     
     int writePos = 0;
-    float readPos1 = 0.0f;    // First read head
-    float readPos2 = 0.0f;    // Second read head (for crossfading)
+    float readPos = 0.0f;
+    int outputReadPos = 0;
+    int outputWritePos = 0;
+    
+    int samplesUntilNextGrain = 0;
     
     float currentPitchRatio = 1.0f;
     float targetPitchRatio = 1.0f;
-    
-    float crossfadePhase = 0.0f;
-    int crossfadeLength = 256;
 };
