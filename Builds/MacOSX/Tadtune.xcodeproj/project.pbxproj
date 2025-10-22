@@ -81,6 +81,7 @@
 		19D77A6C45519FCC54342C2C /* Info-Standalone_Plugin.plist */ /* Info-Standalone_Plugin.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-Standalone_Plugin.plist"; path = "Info-Standalone_Plugin.plist"; sourceTree = SOURCE_ROOT; };
 		1A935F89DE55726258A823C5 /* DiscRecording.framework */ /* DiscRecording.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
 		1D737B95F1BDFA76DDE78B58 /* juce_audio_basics */ /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = "~/JUCE/modules/juce_audio_basics"; sourceTree = "<absolute>"; };
+		218489425DAD822A28B60373 /* PhaseVocoder.h */ /* PhaseVocoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PhaseVocoder.h; path = ../../Source/PhaseVocoder.h; sourceTree = SOURCE_ROOT; };
 		290AF62CBA07C5797B1B7CAA /* include_juce_audio_processors.mm */ /* include_juce_audio_processors.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors.mm; path = ../../JuceLibraryCode/include_juce_audio_processors.mm; sourceTree = SOURCE_ROOT; };
 		2AD74450947CC1304652E876 /* include_juce_graphics.mm */ /* include_juce_graphics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_graphics.mm; path = ../../JuceLibraryCode/include_juce_graphics.mm; sourceTree = SOURCE_ROOT; };
 		2E0D59CD7546BC4F5DA461F2 /* AU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tadtune.component; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -310,6 +311,7 @@
 				801CD9EA31321AB8F2482D7E,
 				6F973E8973CDE973F6FD7C88,
 				EFEAF934C2377139E36CEBFC,
+				218489425DAD822A28B60373,
 				DD8A8F3D49CF1C3EB3285C47,
 			);
 			name = Source;

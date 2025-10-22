@@ -97,8 +97,6 @@ public:
             // Clamp to reasonable range
             targetPitchRatio = std::max(0.75f, std::min(1.35f, targetPitchRatio));
             
-            DBG("Detected: " << detectedFreq << " Hz -> Target: " << targetFreq
-                << " Hz (ratio: " << targetPitchRatio << ")");
         }
         else
         {

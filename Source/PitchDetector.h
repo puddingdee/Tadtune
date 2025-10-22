@@ -93,14 +93,12 @@ public:
                 bool stillTracking = trackPitch();
                 if (!stillTracking) {
                     detectionMode = true;
-                    DBG("Switching to detection mode - tracking lost");
                 }
                 return stillTracking;
             }
             
             // Force re-detection after a while
             if (framesSinceLastDetection > 22050) { // ~0.5 second
-                DBG("Forcing re-detection after 0.5 second");
                 detectionMode = true;
                 framesSinceLastDetection = 0;
             }
@@ -109,7 +107,7 @@ public:
         return false;
     }
     
-    // NORMALIZED DIFFERENCE FUNCTION is the core pitch detection algorithm
+    // NORMALIZED DIFFERENCE FUNCTION
     // which measures similarity between segments of signal separated by period L
     // returns 0 for perfect match and 1 for no correlation
     double computeDifference(int L, const std::vector<float>& buffer, int writePos)
@@ -211,14 +209,11 @@ public:
             }
         }
         
-        DBG("Detection - bestL: " << bestL << " diff: " << minDifference);
         
         // More permissive threshold for low frequencies
         if (bestL > 0 && minDifference < 0.5)
         {
             double detectedFreq = fs / bestL;
-            
-            DBG("Pitch detected: " << detectedFreq << " Hz, L=" << bestL);
             
             // Wider frequency range
             if (detectedFreq >= 70.0 && detectedFreq <= 1200.0)
@@ -261,7 +256,6 @@ public:
         consecutiveBad = 0;
         
         double freq = fs / period;
-        DBG("=== TRACKING INITIALIZED: " << freq << "Hz, period=" << period << " ===");
     }
     
     bool trackPitch()
@@ -296,7 +290,6 @@ public:
         
         if (minIdx < 0)
         {
-            DBG("Tracking: no minimum found");
             consecutiveBad++;
             if (consecutiveBad > 5) {
                 return false; // Signal tracking failure
@@ -325,7 +318,6 @@ public:
                     double periodRatio = newPeriod / cyclePeriod;
                     if (periodRatio > 1.5 || periodRatio < 0.67)
                     {
-                        DBG("Period jump too large: " << cyclePeriod << " -> " << newPeriod);
                         consecutiveBad++;
                         if (consecutiveBad > 3) {
                             return false; // Signal tracking failure
@@ -339,7 +331,6 @@ public:
                         // Log significant frequency changes
                         static double lastLoggedFreq = 0.0;
                         if (std::abs(newFreq - lastLoggedFreq) > 5.0) {
-                            DBG("Tracking - freq: " << newFreq << " Hz, period: " << newPeriod);
                             lastLoggedFreq = newFreq;
                         }
                     }
@@ -363,7 +354,6 @@ public:
             }
             else
             {
-                DBG("Tracking - poor periodicity ratio: " << ratio);
                 consecutiveBad++;
                 if (consecutiveBad > 8)
                 {
@@ -373,7 +363,6 @@ public:
         }
         else
         {
-            DBG("Tracking - insufficient energy");
             consecutiveBad++;
             if (consecutiveBad > 5) {
                 return false;
