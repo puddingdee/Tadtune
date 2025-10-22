@@ -62,6 +62,7 @@ public:
         auto totalNumInputChannels  = getTotalNumInputChannels();
         auto totalNumOutputChannels = getTotalNumOutputChannels();
         
+        
         // Clear any output channels that don't contain input data
         for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
             buffer.clear(i, 0, buffer.getNumSamples());
@@ -249,7 +250,8 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-
+    
+    
 private:
     // The pitch detector instance
     PitchDetector pitchDetector;
@@ -262,11 +264,13 @@ private:
     float smoothedPitchRatio = 1.0f;
     float pitchRatioSmoothingCoeff = 0.98f;
     
+    
     // Thread-safe variables for communicating with UI
     std::atomic<float> currentFrequency { 0.0f };
     std::atomic<float> targetFrequency { 0.0f };
     std::atomic<float> currentPitchRatio { 1.0f };
     std::atomic<bool> isDetecting { true };
+    
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TadtuneAudioProcessor)
 };
