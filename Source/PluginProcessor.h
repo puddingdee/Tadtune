@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "PitchDetector.h"
-#include "PhaseVocoder.h"
+#include "DelayShifter.h"
 
 class TadtuneAudioProcessor : public juce::AudioProcessor
 {
@@ -28,11 +28,11 @@ public:
     //==========================================================================
     void prepareToPlay(double sampleRate, int samplesPerBlock) override
     {
-        // Initialize the pitch detector for this sample rate
+        // Initialize the pitch detector
         pitchDetector.prepare(sampleRate);
         
-        // Initialize phase vocoder with smaller FFT for lower latency (faster snap)
-        phaseVocoder.prepare(sampleRate, 1024);
+        // Initialize delay-based pitch shifter
+        pitchShifter.prepare(sampleRate, 4096);
         
         currentSampleRate = sampleRate;
         
@@ -41,10 +41,6 @@ public:
         isDetecting.store(true);
         targetFrequency.store(0.0f);
         currentPitchRatio.store(1.0f);
-        
-        // Smoothing for pitch ratio changes
-        smoothedPitchRatio = 1.0f;
-        pitchRatioSmoothingCoeff = 0.01;
     }
 
     void releaseResources() override
@@ -62,12 +58,11 @@ public:
         auto totalNumInputChannels  = getTotalNumInputChannels();
         auto totalNumOutputChannels = getTotalNumOutputChannels();
         
-        
         // Clear any output channels that don't contain input data
         for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
             buffer.clear(i, 0, buffer.getNumSamples());
 
-        // Get the left channel (we'll process mono for pitch detection)
+        // Get the left channel for pitch detection
         auto* channelData = buffer.getReadPointer(0);
         int numSamples = buffer.getNumSamples();
         
@@ -78,49 +73,46 @@ public:
             pitchDetector.processSample(sample);
         }
         
-        // Update pitch information ONCE per block
+        // Update pitch information once per block
         float detectedFreq = static_cast<float>(pitchDetector.getFrequency());
+        float confidence = pitchDetector.getConfidence();
+        
         currentFrequency.store(detectedFreq);
         isDetecting.store(pitchDetector.isInDetectionMode());
         
-        // Calculate target frequency and pitch shift ratio
-        float targetPitchRatio = 1.0f;
+        // Calculate pitch shift ratio
+        float pitchRatio = 1.0f;
         
-        if (detectedFreq > 70.0f && detectedFreq < 1200.0f && !pitchDetector.isInDetectionMode())
+        if (detectedFreq > 80.0f && detectedFreq < 800.0f && confidence > 0.15f)
         {
+            // Find nearest chromatic frequency (target)
             float targetFreq = findNearestChromaticFrequency(detectedFreq);
             targetFrequency.store(targetFreq);
             
             // Calculate pitch shift ratio
-            // Ratio > 1.0 means shift up, < 1.0 means shift down
-            targetPitchRatio = targetFreq / detectedFreq;
+            pitchRatio = targetFreq / detectedFreq;
             
             // Clamp to reasonable range
-            targetPitchRatio = std::max(0.75f, std::min(1.35f, targetPitchRatio));
-            
+            pitchRatio = std::max(0.75f, std::min(1.35f, pitchRatio));
         }
         else
         {
             // No valid pitch detected - bypass
             targetFrequency.store(0.0f);
-            targetPitchRatio = 1.0f;
+            pitchRatio = 1.0f;
         }
         
-        // Smooth the pitch ratio to avoid artifacts
-        smoothedPitchRatio = smoothedPitchRatio * pitchRatioSmoothingCoeff
-                           + targetPitchRatio * (1.0f - pitchRatioSmoothingCoeff);
+        currentPitchRatio.store(pitchRatio);
         
-        currentPitchRatio.store(smoothedPitchRatio);
+        // Update pitch shifter with new ratio
+        pitchShifter.setPitchShiftRatio(pitchRatio);
         
-        // Update phase vocoder with new pitch shift ratio
-        phaseVocoder.setPitchShiftRatio(smoothedPitchRatio);
-        
-        // Process audio through phase vocoder
-        applyPhaseVocoderCorrection(buffer);
+        // Process audio through pitch shifter
+        applyPitchCorrection(buffer);
     }
 
     //==========================================================================
-    // PITCH CORRECTION METHODS
+    // PITCH CORRECTION
     //==========================================================================
     
     /** Find nearest chromatic frequency */
@@ -136,29 +128,22 @@ public:
         return 440.0f * std::pow(2.0f, (roundedNote - 69.0f) / 12.0f);
     }
     
-    float findNearestScaleFrequency(float inputFreq)
-    {
-        float midiNote = 69.0f + 12.0f * std::log2(inputFreq / 440.0f);
-        int roundedNote = std::round(midiNote);
-        return 440.f * std::pow(2.0f, (roundedNote - 69.0f) / 12.f);
-    }
-    
-    /** Apply pitch correction using phase vocoder */
-    void applyPhaseVocoderCorrection(juce::AudioBuffer<float>& buffer)
+    /** Apply pitch correction using delay-based shifter */
+    void applyPitchCorrection(juce::AudioBuffer<float>& buffer)
     {
         int numSamples = buffer.getNumSamples();
         int numChannels = buffer.getNumChannels();
         
-        // Process left channel through phase vocoder
+        // Process left channel
         auto* leftChannel = buffer.getWritePointer(0);
         
         for (int i = 0; i < numSamples; ++i)
         {
             float input = leftChannel[i];
-            float output = phaseVocoder.processSample(input);
+            float output = pitchShifter.processSample(input);
             
             // Soft clipping to prevent harsh distortion
-            output = std::tanh(output * 0.9f);
+            output = std::tanh(output * 0.95f);
             
             leftChannel[i] = output;
         }
@@ -250,27 +235,20 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-    
-    
+
 private:
-    // The pitch detector instance
+    // Core components
     PitchDetector pitchDetector;
-    
-    // Phase vocoder for pitch correction
-    PhaseVocoder phaseVocoder;
+    DelayBasedPitchShifter pitchShifter;
     
     // Audio parameters
     double currentSampleRate = 44100.0;
-    float smoothedPitchRatio = 1.0f;
-    float pitchRatioSmoothingCoeff = 0.98f;
     
-    
-    // Thread-safe variables for communicating with UI
+    // Thread-safe variables for UI communication
     std::atomic<float> currentFrequency { 0.0f };
     std::atomic<float> targetFrequency { 0.0f };
     std::atomic<float> currentPitchRatio { 1.0f };
     std::atomic<bool> isDetecting { true };
-    
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TadtuneAudioProcessor)
 };
