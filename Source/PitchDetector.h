@@ -5,7 +5,7 @@
 #include <algorithm>
 
 /**
- * Optimized YIN Pitch Detection Algorithm
+ * Optimized YIN Pitch Detection Algorithm with Median Filtering
  * CPU-efficient version for real-time vocal pitch detection
  */
 class PitchDetector
@@ -13,7 +13,7 @@ class PitchDetector
 public:
     PitchDetector() = default;
     
-    void prepare(double sampleRate, int bufferSize = 1024)  // Smaller buffer
+    void prepare(double sampleRate, int bufferSize = 1024)
     {
         fs = sampleRate;
         yinBufferSize = bufferSize;
@@ -22,13 +22,16 @@ public:
         audioBuffer.resize(yinBufferSize * 2, 0.0f);
         yinBuffer.resize(yinBufferSize / 2, 0.0f);
         
-        // Voice range: 80Hz to 800Hz (more restricted)
-        minPeriod = static_cast<int>(fs / 800.0);   // ~55 samples at 44.1kHz
-        maxPeriod = static_cast<int>(fs / 80.0);    // ~551 samples at 44.1kHz
+        // Voice range: 80Hz to 800Hz
+        minPeriod = static_cast<int>(fs / 800.0);
+        maxPeriod = static_cast<int>(fs / 80.0);
         maxPeriod = std::min(maxPeriod, yinBufferSize / 2);
         
-        // Larger hop for efficiency
-        hopSize = 512;  // Process less frequently (~11.6ms at 44.1kHz)
+        hopSize = 512;
+        
+        // Initialize pitch history for median filtering
+        pitchHistory.resize(5, 0.0f);  // Last 5 pitch estimates
+        historyIndex = 0;
         
         reset();
     }
@@ -44,11 +47,14 @@ public:
         
         std::fill(audioBuffer.begin(), audioBuffer.end(), 0.0f);
         std::fill(yinBuffer.begin(), yinBuffer.end(), 0.0f);
+        std::fill(pitchHistory.begin(), pitchHistory.end(), 0.0f);
         
         smoothedFrequency = 0.0f;
         smoothedConfidence = 0.0f;
         lastGoodFrequency = 0.0f;
         framesWithoutPitch = 0;
+        historyIndex = 0;
+        stableFrameCount = 0;
         
         prevInputSample = 0.0f;
         prevFilteredSample = 0.0f;
@@ -89,14 +95,14 @@ public:
 private:
     bool detectPitch()
     {
-        // Quick energy check to skip silent passages
+        // Quick energy check
         if (!hasEnoughEnergy())
         {
             handleNoPitchDetected();
             return false;
         }
         
-        // YIN algorithm steps
+        // YIN algorithm
         calculateDifferenceFast();
         cumulativeMeanNormalizedDifference();
         
@@ -121,38 +127,93 @@ private:
         }
         
         // Octave error correction
-        if (lastGoodFrequency > 0.0f)
+        detectedFreq = correctOctaveErrors(detectedFreq);
+        
+        // Add to pitch history for median filtering
+        pitchHistory[historyIndex] = detectedFreq;
+        historyIndex = (historyIndex + 1) % pitchHistory.size();
+        
+        // Get median-filtered pitch (removes outliers/spikes)
+        float medianFreq = getMedianPitch();
+        
+        // Use median if we have enough history, otherwise use detected
+        float finalFreq = (stableFrameCount > 3) ? medianFreq : detectedFreq;
+        
+        // Additional validation against previous estimate
+        if (lastGoodFrequency > 0.0f && currentConfidence < 0.6f)
         {
-            float ratio = detectedFreq / lastGoodFrequency;
+            float ratio = finalFreq / lastGoodFrequency;
             
-            // Fix common octave errors
-            if (ratio > 1.85f && ratio < 2.15f)
-                detectedFreq *= 0.5f;
-            else if (ratio > 0.47f && ratio < 0.54f)
-                detectedFreq *= 2.0f;
-            
-            // Reject if still too far from previous (unless high confidence)
-            ratio = detectedFreq / lastGoodFrequency;
-            if ((ratio > 1.2f || ratio < 0.83f) && currentConfidence < 0.6f)
+            // Reject if too far from previous (unless very confident)
+            if (ratio > 1.15f || ratio < 0.87f)
             {
-                handleNoPitchDetected();
-                return false;
+                // Use previous frequency instead of rejecting entirely
+                finalFreq = lastGoodFrequency;
+                currentConfidence *= 0.7f;  // Reduce confidence
             }
         }
         
         // Update with smoothing
-        updatePitchEstimate(detectedFreq, currentConfidence);
+        updatePitchEstimate(finalFreq, currentConfidence);
         
         return true;
     }
     
-    // Fast energy check
+    // Correct common octave errors
+    float correctOctaveErrors(float detectedFreq)
+    {
+        if (lastGoodFrequency > 0.0f)
+        {
+            float ratio = detectedFreq / lastGoodFrequency;
+            
+            // Fix octave up
+            if (ratio > 1.85f && ratio < 2.15f)
+                return detectedFreq * 0.5f;
+            
+            // Fix octave down
+            if (ratio > 0.47f && ratio < 0.54f)
+                return detectedFreq * 2.0f;
+            
+            // Fix fifth up (3:2 ratio)
+            if (ratio > 1.45f && ratio < 1.55f)
+                return detectedFreq * (2.0f / 3.0f);
+            
+            // Fix fifth down (2:3 ratio)
+            if (ratio > 0.65f && ratio < 0.70f)
+                return detectedFreq * (3.0f / 2.0f);
+        }
+        
+        return detectedFreq;
+    }
+    
+    // Median filter to remove pitch spikes/outliers
+    float getMedianPitch()
+    {
+        // Copy history and sort
+        std::vector<float> sorted = pitchHistory;
+        std::sort(sorted.begin(), sorted.end());
+        
+        // Remove zeros (unfilled history)
+        sorted.erase(std::remove_if(sorted.begin(), sorted.end(),
+                                    [](float f) { return f < 80.0f; }),
+                     sorted.end());
+        
+        if (sorted.empty())
+            return 0.0f;
+        
+        // Return median
+        size_t mid = sorted.size() / 2;
+        if (sorted.size() % 2 == 0)
+            return (sorted[mid - 1] + sorted[mid]) / 2.0f;
+        else
+            return sorted[mid];
+    }
+    
     bool hasEnoughEnergy()
     {
         int startPos = (writePos - yinBufferSize + audioBuffer.size()) % audioBuffer.size();
         float sumSquares = 0.0f;
         
-        // Check every 4th sample for speed
         for (int i = 0; i < yinBufferSize; i += 4)
         {
             int idx = (startPos + i) % audioBuffer.size();
@@ -161,23 +222,18 @@ private:
         }
         
         float rms = std::sqrt(sumSquares / (yinBufferSize / 4));
-        return rms > 0.01f;  // Noise gate
+        return rms > 0.01f;
     }
     
-    // Optimized difference calculation
     void calculateDifferenceFast()
     {
         int startPos = (writePos - yinBufferSize + audioBuffer.size()) % audioBuffer.size();
-        
-        // Only calculate up to maxPeriod (not full buffer)
         int searchRange = std::min((int)yinBuffer.size(), maxPeriod + 10);
         
         for (int tau = 0; tau < searchRange; ++tau)
         {
             double sum = 0.0;
-            
-            // Reduced computation window for speed
-            int computeLength = yinBufferSize / 3;  // Only use 1/3 of buffer
+            int computeLength = yinBufferSize / 3;
             
             for (int i = 0; i < computeLength; ++i)
             {
@@ -191,7 +247,6 @@ private:
             yinBuffer[tau] = sum;
         }
         
-        // Fill rest with high values (won't be selected)
         for (int tau = searchRange; tau < yinBuffer.size(); ++tau)
         {
             yinBuffer[tau] = 1e10f;
@@ -202,7 +257,6 @@ private:
     {
         yinBuffer[0] = 1.0f;
         double runningSum = 0.0;
-        
         int searchRange = std::min((int)yinBuffer.size(), maxPeriod + 10);
         
         for (int tau = 1; tau < searchRange; ++tau)
@@ -217,14 +271,12 @@ private:
         float threshold = 0.15f;
         int tau = minPeriod;
         
-        // Find first point below threshold
         while (tau < maxPeriod && yinBuffer[tau] >= threshold)
             tau++;
         
         if (tau >= maxPeriod)
             return -1;
         
-        // Find minimum
         int minTau = tau;
         float minVal = yinBuffer[tau];
         
@@ -265,10 +317,34 @@ private:
         currentFrequency = newFreq;
         confidence = newConfidence;
         
-        // Adaptive smoothing
-        float smoothingFactor = 0.4f;
-        if (newConfidence > 0.7f)
-            smoothingFactor = 0.2f;  // Less smoothing when confident
+        // Count stable frames
+        if (lastGoodFrequency > 0.0f)
+        {
+            float ratio = newFreq / lastGoodFrequency;
+            if (ratio > 0.98f && ratio < 1.02f)  // Within 2%
+                stableFrameCount++;
+            else
+                stableFrameCount = 0;
+        }
+        
+        // Confidence-based smoothing
+        float smoothingFactor;
+        
+        if (newConfidence > 0.7f && stableFrameCount > 5)
+        {
+            // High confidence and stable: light smoothing
+            smoothingFactor = 0.15f;
+        }
+        else if (newConfidence > 0.5f)
+        {
+            // Medium confidence: moderate smoothing
+            smoothingFactor = 0.35f;
+        }
+        else
+        {
+            // Low confidence: heavy smoothing
+            smoothingFactor = 0.6f;
+        }
         
         if (smoothedFrequency == 0.0f)
         {
@@ -289,6 +365,7 @@ private:
     {
         confidence = 0.0f;
         framesWithoutPitch++;
+        stableFrameCount = 0;
         
         if (framesWithoutPitch > 3)
         {
@@ -299,6 +376,7 @@ private:
                 smoothedFrequency = 0.0f;
                 smoothedConfidence = 0.0f;
                 lastGoodFrequency = 0.0f;
+                std::fill(pitchHistory.begin(), pitchHistory.end(), 0.0f);
             }
         }
     }
@@ -332,6 +410,11 @@ private:
     float smoothedConfidence = 0.0f;
     float lastGoodFrequency = 0.0f;
     int framesWithoutPitch = 0;
+    int stableFrameCount = 0;
+    
+    // Median filtering for pitch stability
+    std::vector<float> pitchHistory;
+    int historyIndex = 0;
     
     float prevInputSample = 0.0f;
     float prevFilteredSample = 0.0f;
