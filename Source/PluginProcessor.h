@@ -16,6 +16,9 @@ class TadtuneAudioProcessorEditor;
               parameters(*this, nullptr, "PARAMETERS", createParameterLayout())
         {
             smoothingParam = parameters.getRawParameterValue("smoothing");
+            wetGain = parameters.getRawParameterValue("wet gain");
+            dryGain = parameters.getRawParameterValue("dry gain");
+
             
             juce::RuntimePermissions::request(
                     juce::RuntimePermissions::recordAudio,
@@ -110,7 +113,7 @@ class TadtuneAudioProcessorEditor;
             pitchShifter.setPitchShiftRatio(pitchRatio);
             
             // Process audio through pitch shifter
-            applyPitchCorrection(buffer);
+            applyPitchCorrectionWithMix(buffer);
         }
 
         //==========================================================================
@@ -123,11 +126,30 @@ class TadtuneAudioProcessorEditor;
             params.push_back(std::make_unique<juce::AudioParameterFloat>(
                 "smoothing",
                 "Smoothing Time",
+
                 juce::NormalisableRange<float>(0.0f, 200.0f, 1.0f),
-                50.0f,
+                0.0f,
                 juce::AudioParameterFloatAttributes()
                     .withStringFromValueFunction([](float value, int) { return juce::String(value, 0) + " ms"; })
             ));
+            
+            params.push_back(std::make_unique<juce::AudioParameterFloat>(
+                    "wet gain",
+                    "Wet Gain",
+                    juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+                    1.0f,
+                    juce::AudioParameterFloatAttributes()
+                        .withStringFromValueFunction([](float value, int) { return juce::String(value * 100.0f, 0) + " %"; })
+                ));
+                
+                params.push_back(std::make_unique<juce::AudioParameterFloat>(
+                    "dry gain",
+                    "Dry Gain",
+                    juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
+                    0.0f,
+                    juce::AudioParameterFloatAttributes()
+                        .withStringFromValueFunction([](float value, int) { return juce::String(value * 100.0f, 0) + " %"; })
+                ));
             
             return { params.begin(), params.end() };
         }
@@ -175,7 +197,57 @@ class TadtuneAudioProcessorEditor;
                 buffer.copyFrom(channel, 0, buffer, 0, 0, numSamples);
             }
         }
-
+        
+        void applyPitchCorrectionWithMix(juce::AudioBuffer<float>& buffer)
+        {
+            int numSamples = buffer.getNumSamples();
+            int numChannels = buffer.getNumChannels();
+            
+            // Get wet/dry gain values
+            float wet = wetGain->load();
+            float dry = dryGain->load();
+            
+            // Create a temporary buffer to store the dry signal
+            juce::AudioBuffer<float> dryBuffer(numChannels, numSamples);
+            
+            // Copy original signal to dry buffer
+            for (int channel = 0; channel < numChannels; ++channel)
+            {
+                dryBuffer.copyFrom(channel, 0, buffer, channel, 0, numSamples);
+            }
+            
+            // Process left channel through phase vocoder (wet signal)
+            auto* leftChannel = buffer.getWritePointer(0);
+            
+            for (int i = 0; i < numSamples; ++i)
+            {
+                float input = leftChannel[i];
+                float output = pitchShifter.processSample(input);
+                
+                // Soft clipping to prevent harsh distortion
+                output = std::tanh(output * 0.95f);
+                
+                leftChannel[i] = output;
+            }
+            
+            // Copy processed left to other channels (mono processing)
+            for (int channel = 1; channel < numChannels; ++channel)
+            {
+                buffer.copyFrom(channel, 0, buffer, 0, 0, numSamples);
+            }
+            
+            // Mix wet and dry signals
+            for (int channel = 0; channel < numChannels; ++channel)
+            {
+                auto* wetSignal = buffer.getWritePointer(channel);
+                auto* drySignal = dryBuffer.getReadPointer(channel);
+                
+                for (int i = 0; i < numSamples; ++i)
+                {
+                    wetSignal[i] = (wetSignal[i] * wet * 6) + (drySignal[i] * dry);
+                }
+            }
+        }
         //==========================================================================
         // QUERY METHODS FOR UI
         //==========================================================================
@@ -275,6 +347,9 @@ class TadtuneAudioProcessorEditor;
         // Parameters
         juce::AudioProcessorValueTreeState parameters;
         std::atomic<float>* smoothingParam;
+        std::atomic<float>* wetGain;
+        std::atomic<float>* dryGain;
+
         
         // Audio parameters
         double currentSampleRate = 44100.0;
