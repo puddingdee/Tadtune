@@ -8,11 +8,11 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.tadware.Tadtune</string>
+    <string>com.tadware.tadtune</string>
     <key>CFBundleName</key>
-    <string>Tadtune</string>
+    <string>tadtune</string>
     <key>CFBundleDisplayName</key>
-    <string>Tadtune</string>
+    <string>tadtune</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>

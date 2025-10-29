@@ -8,11 +8,11 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.tadware.Tadtune</string>
+    <string>com.tadware.tadtune</string>
     <key>CFBundleName</key>
-    <string>Tadtune</string>
+    <string>tadtune</string>
     <key>CFBundleDisplayName</key>
-    <string>Tadtune</string>
+    <string>tadtune</string>
     <key>CFBundlePackageType</key>
     <string>BNDL</string>
     <key>CFBundleSignature</key>
@@ -29,11 +29,11 @@
     <array>
       <dict>
         <key>name</key>
-        <string>tadware: Tadtune</string>
+        <string>tadware: tadtune</string>
         <key>description</key>
-        <string>Tadtune</string>
+        <string>tadtune</string>
         <key>factoryFunction</key>
-        <string>TadtuneAUFactory</string>
+        <string>tadtuneAUFactory</string>
         <key>manufacturer</key>
         <string>Manu</string>
         <key>type</key>

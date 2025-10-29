@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
-		9CFCB45F729947FB32481852 /* Tadtune - All */ = {
+		9CFCB45F729947FB32481852 /* tadtune - All */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = B26A44CF99CB56BF8F847BB5;
 			buildPhases = (
@@ -19,8 +19,8 @@
 				939B6BD99618850693D1550A,
 				C230AA300399A46CF91AC5DC,
 			);
-			name = "Tadtune - All";
-			productName = Tadtune;
+			name = "tadtune - All";
+			productName = tadtune;
 		};
 /* End PBXAggregateTarget section */
 
@@ -320,7 +320,7 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		A94E1E52A3F801AAF9A7DC3B /* Tadtune */ = {
+		A94E1E52A3F801AAF9A7DC3B /* tadtune */ = {
 			isa = PBXGroup;
 			children = (
 				DA59EA170D8A1065E8BEB585,
@@ -331,7 +331,7 @@
 				EF6DF2870B33BD57F460B916,
 				D8EA8E3CD33A16096ADC7D6C,
 			);
-			name = Tadtune;
+			name = tadtune;
 			sourceTree = "<group>";
 		};
 		DA59EA170D8A1065E8BEB585 /* Source */ = {
@@ -391,7 +391,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		148F0CB13BA54696922C849D /* Tadtune - VST3 Manifest Helper */ = {
+		148F0CB13BA54696922C849D /* tadtune - VST3 Manifest Helper */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 55B682F330384787C2B153DC;
 			buildPhases = (
@@ -402,12 +402,12 @@
 			);
 			dependencies = (
 			);
-			name = "Tadtune - VST3 Manifest Helper";
-			productName = Tadtune;
+			name = "tadtune - VST3 Manifest Helper";
+			productName = tadtune;
 			productReference = 78EA995E98E0E9EB0B44EDD4;
 			productType = "com.apple.product-type.tool";
 		};
-		28C34BD67A2078CA91E9CA05 /* Tadtune - Shared Code */ = {
+		28C34BD67A2078CA91E9CA05 /* tadtune - Shared Code */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 21F77840F558A8D98112563A;
 			buildPhases = (
@@ -417,12 +417,12 @@
 			);
 			dependencies = (
 			);
-			name = "Tadtune - Shared Code";
-			productName = Tadtune;
+			name = "tadtune - Shared Code";
+			productName = tadtune;
 			productReference = 8EAF74A26B1FBFB0B5CF037A;
 			productType = "com.apple.product-type.library.static";
 		};
-		31422CF2D739B047FD394A99 /* Tadtune - VST3 */ = {
+		31422CF2D739B047FD394A99 /* tadtune - VST3 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 81C0AADC89B17CB2DFEC7A72;
 			buildPhases = (
@@ -438,12 +438,12 @@
 				C8C49DDEB35D6F937AD4DCFA,
 				AC0249BFE695EEC2BB3033A8,
 			);
-			name = "Tadtune - VST3";
-			productName = Tadtune;
+			name = "tadtune - VST3";
+			productName = tadtune;
 			productReference = E2E7E9B4A49E0BC5211D554F;
 			productType = "com.apple.product-type.bundle";
 		};
-		4B8825465F60492868AE8204 /* Tadtune - Standalone Plugin */ = {
+		4B8825465F60492868AE8204 /* tadtune - Standalone Plugin */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4AEF1704B15C685143ADA130;
 			buildPhases = (
@@ -456,12 +456,12 @@
 			dependencies = (
 				6022175384158E52179C4C96,
 			);
-			name = "Tadtune - Standalone Plugin";
-			productName = Tadtune;
+			name = "tadtune - Standalone Plugin";
+			productName = tadtune;
 			productReference = 951743497E75EA40F2E820C1;
 			productType = "com.apple.product-type.application";
 		};
-		CC12F920DF8B3F74478EB167 /* Tadtune - AU */ = {
+		CC12F920DF8B3F74478EB167 /* tadtune - AU */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8DCB37D70AFB06671E614090;
 			buildPhases = (
@@ -475,8 +475,8 @@
 			dependencies = (
 				1946DA91804D385B14C215A2,
 			);
-			name = "Tadtune - AU";
-			productName = Tadtune;
+			name = "tadtune - AU";
+			productName = tadtune;
 			productReference = 2E0D59CD7546BC4F5DA461F2;
 			productType = "com.apple.product-type.bundle";
 		};
@@ -856,8 +856,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -876,11 +876,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -888,13 +888,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -918,7 +918,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lTadtune";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -968,8 +968,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -988,11 +988,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1000,13 +1000,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1025,7 +1025,7 @@
 				INFOPLIST_PREPROCESS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "juce_vst3_helper";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1074,8 +1074,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1094,11 +1094,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1106,13 +1106,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1137,7 +1137,7 @@
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lTadtune";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1236,8 +1236,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1256,11 +1256,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1268,13 +1268,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1294,7 +1294,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lTadtune";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1343,8 +1343,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1363,11 +1363,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1375,13 +1375,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1401,7 +1401,7 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -1451,8 +1451,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1471,11 +1471,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1483,13 +1483,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1509,7 +1509,7 @@
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "juce_vst3_helper";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1558,8 +1558,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1578,11 +1578,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1590,13 +1590,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1617,7 +1617,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lTadtune";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1666,8 +1666,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1686,11 +1686,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1698,13 +1698,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1723,7 +1723,7 @@
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -1829,8 +1829,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1849,11 +1849,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1861,13 +1861,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1890,7 +1890,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lTadtune";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
@@ -1940,8 +1940,8 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"Tadtune\\\"",
-					"JucePlugin_Desc=\\\"Tadtune\\\"",
+					"JucePlugin_Name=\\\"tadtune\\\"",
+					"JucePlugin_Desc=\\\"tadtune\\\"",
 					"JucePlugin_Manufacturer=\\\"tadware\\\"",
 					"JucePlugin_ManufacturerWebsite=\\\"www.tadware.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
@@ -1960,11 +1960,11 @@
 					"JucePlugin_Vst3Category=\\\"Fx\\\"",
 					"JucePlugin_AUMainType=\\'aufx\\'",
 					"JucePlugin_AUSubType=JucePlugin_PluginCode",
-					"JucePlugin_AUExportPrefix=TadtuneAU",
-					"JucePlugin_AUExportPrefixQuoted=\\\"TadtuneAU\\\"",
+					"JucePlugin_AUExportPrefix=tadtuneAU",
+					"JucePlugin_AUExportPrefixQuoted=\\\"tadtuneAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.tadware.Tadtune",
-					"JucePlugin_AAXIdentifier=com.tadware.Tadtune",
+					"JucePlugin_CFBundleIdentifier=com.tadware.tadtune",
+					"JucePlugin_AAXIdentifier=com.tadware.tadtune",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=0",
@@ -1972,13 +1972,13 @@
 					"JucePlugin_AAXDisableMultiMono=0",
 					"JucePlugin_IAAType=0x61757278",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"tadware:\\ Tadtune\\\"",
+					"JucePlugin_IAAName=\\\"tadware:\\ tadtune\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.tadware.Tadtune.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.Tadtune.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.tadware.tadtune.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.tadware.tadtune.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -2002,7 +2002,7 @@
 				MTL_HEADER_SEARCH_PATHS = "$(HOME)/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(HOME)/JUCE/modules $(HOME)/JUCE/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lTadtune";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.Tadtune;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tadware.tadtune;
 				PRODUCT_NAME = "Tadtune";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="lgeMPz" name="Tadtune" projectType="audioplug" useAppConfig="0"
+<JUCERPROJECT id="lgeMPz" name="tadtune" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="tadware">
-  <MAINGROUP id="Np2YsZ" name="Tadtune">
+  <MAINGROUP id="Np2YsZ" name="tadtune">
     <GROUP id="{03D4AC1F-6CC2-B8D1-5B1B-ABAF89668E58}" name="Source">
       <FILE id="Woy66a" name="PitchDetector.h" compile="0" resource="0" file="Source/PitchDetector.h"/>
       <FILE id="dwPUIj" name="PhaseVocoder.h" compile="0" resource="0" file="Source/PhaseVocoder.h"/>
