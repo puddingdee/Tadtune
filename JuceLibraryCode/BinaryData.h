@@ -8,12 +8,6 @@
 
 namespace BinaryData
 {
-    extern const char*   lmao_png;
-    const int            lmao_pngSize = 5829447;
-
-    extern const char*   lilypad_png;
-    const int            lilypad_pngSize = 5866916;
-
     extern const char*   pinkpad_png;
     const int            pinkpad_pngSize = 5982915;
 
@@ -26,8 +20,11 @@ namespace BinaryData
     extern const char*   catfader_png;
     const int            catfader_pngSize = 3970235;
 
+    extern const char*   lmbg_png;
+    const int            lmbg_pngSize = 5829447;
+
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 6;
+    const int namedResourceListSize = 5;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

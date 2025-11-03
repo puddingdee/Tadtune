@@ -4,10 +4,18 @@
 #include <cmath>
 #include <algorithm>
 
-/**
- * Optimized YIN Pitch Detection Algorithm with Median Filtering
- * CPU-efficient version for real-time vocal pitch detection
+/* real time pitch detection using YIN. implementation based on "YIN, a fundamental frequency estimator for speech and music" by Alain de Cheveigne and Hideki Kawahara, implementation assistance with Claude AI
+ 
+ 1. high pass filter to remove DC offset and low frequencies
+ 2. buffer management (circular buffer to store incoming audio
+ 3. energy check skips processing on silence
+ 4. YIN algorithm: compute squared difference function, normalize it, find pitch period candidate
+ 5. post processing: improved period accuracy with parabolic interpolation, correct octave errors
  */
+
+
+
+
 class PitchDetector
 {
 public:
@@ -18,19 +26,19 @@ public:
         fs = sampleRate;
         yinBufferSize = bufferSize;
         
-        // Allocate buffers
+        // allocate buffers. audiobuffer is large for wraparound headroom. yinbuffer is small because it's bounded by 80 - 800Hz detection limits.
         audioBuffer.resize(yinBufferSize * 2, 0.0f);
         yinBuffer.resize(yinBufferSize / 2, 0.0f);
         
-        // Voice range: 80Hz to 800Hz
+        // 80 - 800Hz detection range
         minPeriod = static_cast<int>(fs / 800.0);
         maxPeriod = static_cast<int>(fs / 80.0);
         maxPeriod = std::min(maxPeriod, yinBufferSize / 2);
         
         hopSize = 512;
         
-        // Initialize pitch history for median filtering
-        pitchHistory.resize(5, 0.0f);  // Last 5 pitch estimates
+        // init pitch history for median filtering
+        pitchHistory.resize(5, 0.0f);  // last 5 pitch estimates
         historyIndex = 0;
         
         reset();
@@ -62,17 +70,17 @@ public:
     
     bool processSample(float sample)
     {
-        // Apply high-pass filter
+        // apply highpass
         sample = highPassFilter(sample);
         
-        // Store in ring buffer
+        // store in ring buffer
         audioBuffer[writePos] = sample;
         writePos = (writePos + 1) % audioBuffer.size();
         samplesInBuffer = std::min(samplesInBuffer + 1, (int)audioBuffer.size());
         
         frameCounter++;
         
-        // Process every hopSize samples
+        // process when we reach hopsize
         if (frameCounter >= hopSize)
         {
             frameCounter = 0;
@@ -86,7 +94,7 @@ public:
         return false;
     }
     
-    // Getters
+    // getters
     double getFrequency() const { return smoothedFrequency; }
     float getConfidence() const { return smoothedConfidence; }
     bool isInDetectionMode() const { return confidence < 0.15f; }
@@ -95,7 +103,7 @@ public:
 private:
     bool detectPitch()
     {
-        // Quick energy check
+        // energy check, dont process noise
         if (!hasEnoughEnergy())
         {
             handleNoPitchDetected();
@@ -114,86 +122,87 @@ private:
             return false;
         }
         
-        // Parabolic interpolation
+        // parabolic interpolation
         float betterTau = parabolicInterpolation(tauEstimate);
+        // convert to freq
         float detectedFreq = fs / betterTau;
         float currentConfidence = 1.0f - yinBuffer[tauEstimate];
         
-        // Validate frequency range
+        // validate freq range
         if (detectedFreq < 80.0f || detectedFreq > 800.0f)
         {
             handleNoPitchDetected();
             return false;
         }
         
-        // Octave error correction
+        // octave error correction
         detectedFreq = correctOctaveErrors(detectedFreq);
         
-        // Add to pitch history for median filtering
+        // add to pitch history for median filtering
         pitchHistory[historyIndex] = detectedFreq;
         historyIndex = (historyIndex + 1) % pitchHistory.size();
         
-        // Get median-filtered pitch (removes outliers/spikes)
+        // remove outliers
         float medianFreq = getMedianPitch();
         
-        // Use median if we have enough history, otherwise use detected
+        // use median if enough data, else use regs
         float finalFreq = (stableFrameCount > 3) ? medianFreq : detectedFreq;
         
-        // Additional validation against previous estimate
+        // additional validation
         if (lastGoodFrequency > 0.0f && currentConfidence < 0.6f)
         {
             float ratio = finalFreq / lastGoodFrequency;
             
-            // Reject if too far from previous (unless very confident)
+            // reject if too far from previous, unless very confident
             if (ratio > 1.15f || ratio < 0.87f)
             {
-                // Use previous frequency instead of rejecting entirely
+                // use prev freq instead of complete rejection
                 finalFreq = lastGoodFrequency;
-                currentConfidence *= 0.7f;  // Reduce confidence
+                currentConfidence *= 0.7f;  // reduce confidence
             }
         }
         
-        // Update with smoothing
+        // update
         updatePitchEstimate(finalFreq, currentConfidence);
         
         return true;
     }
     
-    // Correct common octave errors
+    // compares new detection to the last stable pitch and nudges back to plausible value. this avoids locking onto especially present harmonics
     float correctOctaveErrors(float detectedFreq)
     {
         if (lastGoodFrequency > 0.0f)
         {
             float ratio = detectedFreq / lastGoodFrequency;
             
-            // Fix octave up
+            // fix 8va up
             if (ratio > 1.85f && ratio < 2.15f)
                 return detectedFreq * 0.5f;
             
-            // Fix octave down
+            // fix 8va dwn
             if (ratio > 0.47f && ratio < 0.54f)
                 return detectedFreq * 2.0f;
             
-            // Fix fifth up (3:2 ratio)
+            // fix 5th up
             if (ratio > 1.45f && ratio < 1.55f)
                 return detectedFreq * (2.0f / 3.0f);
             
-            // Fix fifth down (2:3 ratio)
+            // fix 5th dwn
             if (ratio > 0.65f && ratio < 0.70f)
                 return detectedFreq * (3.0f / 2.0f);
         }
-        
+        // return regs if nothing
         return detectedFreq;
     }
     
-    // Median filter to remove pitch spikes/outliers
+    // stabilizes output by rejecting outliers and short spikes. computes median of recent estimates in pitchHistory
     float getMedianPitch()
     {
-        // Copy history and sort
+        // sortingggg
         std::vector<float> sorted = pitchHistory;
         std::sort(sorted.begin(), sorted.end());
         
-        // Remove zeros (unfilled history)
+        // remove zeros and sub 80hz
         sorted.erase(std::remove_if(sorted.begin(), sorted.end(),
                                     [](float f) { return f < 80.0f; }),
                      sorted.end());
@@ -201,7 +210,7 @@ private:
         if (sorted.empty())
             return 0.0f;
         
-        // Return median
+        // return median. odd count, middle elem is median. even, avg middle elems
         size_t mid = sorted.size() / 2;
         if (sorted.size() % 2 == 0)
             return (sorted[mid - 1] + sorted[mid]) / 2.0f;
@@ -225,15 +234,20 @@ private:
         return rms > 0.01f;
     }
     
+    
+    // SDF for a limited set of time lags.
     void calculateDifferenceFast()
     {
+        // picks the last yinBufferSize samples and wraps
         int startPos = (writePos - yinBufferSize + audioBuffer.size()) % audioBuffer.size();
+        // only evaluate lags up to max expected pitch period plus some
         int searchRange = std::min((int)yinBuffer.size(), maxPeriod + 10);
         
+        // for each lag tau in the search range, accumulate the squared difference btween signal and tau shifted signal
         for (int tau = 0; tau < searchRange; ++tau)
         {
             double sum = 0.0;
-            int computeLength = yinBufferSize / 3;
+            int computeLength = yinBufferSize / 3; // /3 samples to save CPU
             
             for (int i = 0; i < computeLength; ++i)
             {
@@ -243,22 +257,27 @@ private:
                 float delta = audioBuffer[idx1] - audioBuffer[idx2];
                 sum += delta * delta;
             }
-            
+            // result. low vals are good
             yinBuffer[tau] = sum;
         }
         
         for (int tau = searchRange; tau < yinBuffer.size(); ++tau)
         {
+            // cringe invalid result do not use
             yinBuffer[tau] = 1e10f;
         }
     }
     
+    // converts raw SDF to cumulative mean normalized difference CMND. reduces bias towards small lags and stabilizes pitch detection, allowing for more precise threshold
     void cumulativeMeanNormalizedDifference()
     {
+        // lag 0 set to bad value bc its not meaningful
         yinBuffer[0] = 1.0f;
+        // define search range
         double runningSum = 0.0;
         int searchRange = std::min((int)yinBuffer.size(), maxPeriod + 10);
         
+        // maintain a running sum of raw SDF. runningSum / tau is cumulative mean of SDF up to tau. dividing raw sdf by cumulative mean normalizes it.
         for (int tau = 1; tau < searchRange; ++tau)
         {
             runningSum += yinBuffer[tau];
@@ -266,6 +285,7 @@ private:
         }
     }
     
+    // scans CMND curve to pick best candidate period tau for the fundamental. finds the first region where CMND drops below threshold, then selects local minimum. returns -1 if not found
     int absoluteThreshold()
     {
         float threshold = 0.15f;
@@ -293,15 +313,19 @@ private:
         return (minVal > 0.5f) ? -1 : minTau;
     }
     
+    // refines the coarse period estimate returned by absoluteThreshold() to a subsample resolution. finds a parabola to the CMND values at tauEstimate - 1, tauEstimate, and +1 then returns location of the parabola minimum
     float parabolicInterpolation(int tauEstimate)
     {
+        // need neighbors on both sides
         if (tauEstimate < 1 || tauEstimate >= maxPeriod - 1)
             return static_cast<float>(tauEstimate);
         
+        // sample the three points
         float s0 = yinBuffer[tauEstimate - 1];
         float s1 = yinBuffer[tauEstimate];
         float s2 = yinBuffer[tauEstimate + 1];
         
+        // find parabola's vertex offset
         float denom = 2.0f * (2.0f * s1 - s2 - s0);
         if (std::abs(denom) < 1e-10f)
             return static_cast<float>(tauEstimate);
@@ -309,40 +333,42 @@ private:
         float adjustment = (s2 - s0) / denom;
         adjustment = std::max(-0.5f, std::min(0.5f, adjustment));
         
+        // return refined lag, a fractional tau that's more accurate than before when converted to freq
         return tauEstimate + adjustment;
     }
     
+    // update
     void updatePitchEstimate(float newFreq, float newConfidence)
     {
         currentFrequency = newFreq;
         confidence = newConfidence;
         
-        // Count stable frames
+        // count stable frames
         if (lastGoodFrequency > 0.0f)
         {
             float ratio = newFreq / lastGoodFrequency;
-            if (ratio > 0.98f && ratio < 1.02f)  // Within 2%
+            if (ratio > 0.98f && ratio < 1.02f)
                 stableFrameCount++;
             else
                 stableFrameCount = 0;
         }
         
-        // Confidence-based smoothing
+        // confidence based smoothing
         float smoothingFactor;
         
         if (newConfidence > 0.7f && stableFrameCount > 5)
         {
-            // High confidence and stable: light smoothing
+            // high confidence and stable, light smoothing
             smoothingFactor = 0.15f;
         }
         else if (newConfidence > 0.5f)
         {
-            // Medium confidence: moderate smoothing
+            // medium confidence, moderate smoothing
             smoothingFactor = 0.35f;
         }
         else
         {
-            // Low confidence: heavy smoothing
+            // low confidence, heavy smoothing
             smoothingFactor = 0.6f;
         }
         
@@ -361,16 +387,19 @@ private:
         framesWithoutPitch = 0;
     }
     
+    // avoids abrupt jumps on no pitch detected, eventually resets the state if silence or uncertainty persists
     void handleNoPitchDetected()
     {
         confidence = 0.0f;
         framesWithoutPitch++;
         stableFrameCount = 0;
         
+        // gradually reduce smoothedconfidence on consecutive misses
         if (framesWithoutPitch > 3)
         {
             smoothedConfidence *= 0.7f;
             
+            // if too low, clear tracked freq and history to avoid sticking somewhere we shouldnt be
             if (smoothedConfidence < 0.05f)
             {
                 smoothedFrequency = 0.0f;
@@ -381,6 +410,8 @@ private:
         }
     }
     
+    // first order high pass iir
+    // y[n] = α * (y[n−1] + x[n] − x[n−1])
     float highPassFilter(float input)
     {
         const float alpha = 0.995f;
@@ -390,7 +421,7 @@ private:
         return output;
     }
     
-    // Member variables
+    // member variables
     double fs = 44100.0;
     int yinBufferSize = 1024;
     int minPeriod = 55;
@@ -412,7 +443,6 @@ private:
     int framesWithoutPitch = 0;
     int stableFrameCount = 0;
     
-    // Median filtering for pitch stability
     std::vector<float> pitchHistory;
     int historyIndex = 0;
     

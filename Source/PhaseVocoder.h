@@ -3,6 +3,12 @@
     #include <vector>
     #include <cmath>
 
+
+/*
+ frequency domain pitch shifting using phase vocoding
+ 
+ built with Claude AI assistance
+ */
     class PhaseVocoder
     {
     public:
@@ -14,25 +20,26 @@
             frameSize = fftSize;
             hopSize = frameSize / 4;
             
-            // Initialize FFT
+            // initialize juce fft
             fftOrder = (int)std::log2(frameSize);
             fft = std::make_unique<juce::dsp::FFT>(fftOrder);
             
-            // Allocate FFT buffers
-            fftData.resize(frameSize * 2, 0.0f);  // Complex data (real + imaginary)
-            
-            // Analysis and synthesis buffers
+            // allocate fft buffers
+            fftData.resize(frameSize * 2, 0.0f);
+           
+            // analysis and resynthesis buffers
             inputBuffer.resize(frameSize, 0.0f);
             outputBuffer.resize(frameSize, 0.0f);
             
-            // Phase tracking
+            // phase tracking
             lastPhase.resize(frameSize, 0.0f);
             sumPhase.resize(frameSize, 0.0f);
             
-            // Analysis and synthesis windows (Hann window)
+            // hann window init
             analysisWindow.resize(frameSize);
             synthesisWindow.resize(frameSize);
             
+            // make the window
             for (int i = 0; i < frameSize; ++i)
             {
                 float windowValue = 0.5f * (1.0f - std::cos(2.0f * juce::MathConstants<float>::pi * i / (frameSize - 1)));
@@ -40,7 +47,7 @@
                 synthesisWindow[i] = windowValue;
             }
             
-            // Normalize synthesis window for perfect reconstruction with overlap-add
+            // scales the sysnthesis window so the overlap add makes unity gain
             float windowSum = 0.0f;
             for (int i = 0; i < frameSize; i += hopSize)
             {
@@ -53,14 +60,14 @@
                 synthesisWindow[i] /= (windowSum / hopSize);
             }
             
-            // FIFO buffers for input and output
+            // circular buffers for streaming io
             inputFifo.resize(frameSize * 2, 0.0f);
             outputFifo.resize(frameSize * 2, 0.0f);
             
             inputFifoPos = 0;
             outputFifoPos = 0;
             
-            // Pitch shifting with smoothing
+            // init smoothed pitch params
             targetPitchRatio = 1.0f;
             currentPitchRatio = 1.0f;
             smoothingTimeMs = 50.0f; // Default 50ms smoothing
@@ -89,25 +96,29 @@
         
         void setPitchShiftRatio(float ratio)
         {
-            // Clamp to reasonable values
+            // clamp to reasonable values
             targetPitchRatio = std::max(0.5f, std::min(2.0f, ratio));
         }
         
         void setSmoothingTime(float milliseconds)
         {
-            smoothingTimeMs = std::max(0.0f, std::min(500.0f, milliseconds)); // Clamp to 0-500ms
+            smoothingTimeMs = std::max(0.0f, std::min(500.0f, milliseconds)); // 0 to 500ms
             calculateSmoothingCoefficient();
         }
         
+        // gets
         float getCurrentPitchRatio() const { return currentPitchRatio; }
         float getTargetPitchRatio() const { return targetPitchRatio; }
         float getSmoothingTime() const { return smoothingTimeMs; }
         
+        // takes in one input sample, advances the smoothed pitch ratio toward the target, triggers pvoc process when enough samples have accumulated
+        // returns one output sample by overlap adding from output FIFO
         float processSample(float inputSample)
         {
-            // Smooth pitch ratio changes
+            // smooth pitch ratio
             if (std::abs(currentPitchRatio - targetPitchRatio) > 0.001f)
             {
+                // exponential approach per sample toward targetpitchratio
                 currentPitchRatio = currentPitchRatio + smoothingCoefficient * (targetPitchRatio - currentPitchRatio);
             }
             else
@@ -115,20 +126,21 @@
                 currentPitchRatio = targetPitchRatio;
             }
             
-            // Write input to FIFO
+            // write input to fifo
             inputFifo[inputFifoPos] = inputSample;
             inputFifoPos = (inputFifoPos + 1) % inputFifo.size();
             
+            // track how many input samples
             samplesSinceLastProcess++;
             
-            // Process a frame when we have enough samples
+            // when there are enough samples, processframe
             if (samplesSinceLastProcess >= hopSize)
             {
                 processFrame();
                 samplesSinceLastProcess = 0;
             }
             
-            // Read output from FIFO
+            // read output from fifo
             float outputSample = outputFifo[outputFifoPos];
             outputFifo[outputFifoPos] = 0.0f;  // Clear after reading
             outputFifoPos = (outputFifoPos + 1) % outputFifo.size();
@@ -136,27 +148,31 @@
             return outputSample;
         }
         
+        
     private:
+        
+        // converts user facing smoothing time into per sample exponential smoothing coefficient
         void calculateSmoothingCoefficient()
         {
-            // Calculate smoothing coefficient based on time constant
-            // For 50ms smoothing time, we want ~63% of the way to target in 50ms
+            // handle edge cases
             if (smoothingTimeMs <= 0.0f || fs == 0.0f)
             {
-                smoothingCoefficient = 1.0f; // No smoothing
+                smoothingCoefficient = 1.0f; // no smoothing
             }
             else
             {
+                // convert time constant to per sample smoothing value
                 float timeConstantSeconds = smoothingTimeMs / 1000.0f;
                 smoothingCoefficient = 1.0f - std::exp(-1.0f / (timeConstantSeconds * fs));
-                // Apply per-sample, so we need to adjust for the fact that we update every sample
+                // clamp to safe range
                 smoothingCoefficient = std::max(0.0001f, std::min(1.0f, smoothingCoefficient));
             }
         }
         
+        // reads a frame of audio, converts to frequency domain, tracks bin phases, overlap adds resynthesized time domain frame to the output fifo
         void processFrame()
         {
-            // Copy input data from FIFO to input buffer
+            // gets most recent frameSize samples aligned with hopSize
             int readPos = (inputFifoPos - frameSize + inputFifo.size()) % inputFifo.size();
             for (int i = 0; i < frameSize; ++i)
             {
@@ -164,59 +180,61 @@
                 readPos = (readPos + 1) % inputFifo.size();
             }
             
-            // Apply analysis window
+            // apply analysis window before fft
             for (int i = 0; i < frameSize; ++i)
             {
                 fftData[i] = inputBuffer[i] * analysisWindow[i];
             }
             
-            // Perform FFT
+            // do fft
             fft->performRealOnlyForwardTransform(fftData.data(), true);
             
-            // Process in frequency domain with phase vocoder algorithm
+            // phase vocoder algorithm in frequency domain
+            // expectedPhaseInc is the linear phase advance per hop for a sinusoid at bin k
             float expectedPhaseInc = 2.0f * juce::MathConstants<float>::pi * hopSize / frameSize;
             
+            // in every bin k
             for (int k = 0; k < frameSize / 2; ++k)
             {
-                // Get magnitude and phase
+                // get magnitude and phase
                 float real = fftData[k * 2];
                 float imag = fftData[k * 2 + 1];
                 
                 float magnitude = std::sqrt(real * real + imag * imag);
                 float phase = std::atan2(imag, real);
                 
-                // Compute phase difference
+                // compute phase difference
                 float phaseDiff = phase - lastPhase[k];
                 lastPhase[k] = phase;
                 
-                // Subtract expected phase advance
+                // subtract expected phase increment. leaves deviation caused by frequency content between bins
                 phaseDiff -= k * expectedPhaseInc;
                 
-                // Wrap to [-pi, pi]
+                // wrap to -pi, pi to ensure continuity
                 while (phaseDiff > juce::MathConstants<float>::pi)
                     phaseDiff -= 2.0f * juce::MathConstants<float>::pi;
                 while (phaseDiff < -juce::MathConstants<float>::pi)
                     phaseDiff += 2.0f * juce::MathConstants<float>::pi;
                 
-                // Compute true frequency
+                // find true frequency with phase
                 float trueFreq = k * expectedPhaseInc + phaseDiff;
                 
-                // Scale frequency for pitch shifting using SMOOTHED ratio
+                // do the pitch shift
                 trueFreq *= currentPitchRatio;
                 
-                // Accumulate phase
+                // accumulate phase
                 sumPhase[k] += trueFreq;
                 
-                // Compute new complex values
+                // compute new complex values
                 float newPhase = sumPhase[k];
                 fftData[k * 2] = magnitude * std::cos(newPhase);
                 fftData[k * 2 + 1] = magnitude * std::sin(newPhase);
             }
             
-            // Perform inverse FFT
+            // go back to time
             fft->performRealOnlyInverseTransform(fftData.data());
             
-            // Apply synthesis window and overlap-add to output FIFO
+            // synthesis window, overlap add
             int writePos = outputFifoPos;
             for (int i = 0; i < frameSize; ++i)
             {
@@ -250,7 +268,6 @@
         int outputFifoPos = 0;
         int samplesSinceLastProcess = 0;
         
-        // Pitch shifting with smoothing
         float targetPitchRatio = 1.0f;
         float currentPitchRatio = 1.0f;
         float smoothingTimeMs = 50.0f;

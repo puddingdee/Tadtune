@@ -2,6 +2,17 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
+/*
+ ui implementation. requires 5 files to build:
+ pinkpad.png
+ Catalogue 2.0.ttf
+ stems.png
+ catfader.png
+ lmbg.png
+ 
+ built with assistance from Deepseek AI for quick iteration
+ */
+
 class CustomLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
@@ -17,15 +28,12 @@ public:
         return customTypeface;
     }
     
-    // Override to control button font size
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override
     {
-        // Access buttonFontSize from the editor - for now we'll use a default
-        // The font size will be controlled by the buttonFontSize constant
-        return juce::Font(customTypeface).withHeight(11.0f);  // CHANGE 11.0f to adjust font size
+        return juce::Font(customTypeface).withHeight(11.0f);
     }
     
-    // Override to draw circular buttons
+    // circle buttons
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
                             bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
     {
@@ -33,7 +41,6 @@ public:
         auto centre = bounds.getCentre();
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
         
-        // Apply transparency based on toggle state
         auto colour = backgroundColour;
         if (!button.getToggleState())
         {
@@ -43,7 +50,7 @@ public:
         g.setColour(colour);
         g.fillEllipse(bounds.withSizeKeepingCentre(radius * 2, radius * 2));
         
-        // Optional: draw outline
+        // optional: draw outline
         g.setColour(colour.brighter(0.2f));
         g.drawEllipse(bounds.withSizeKeepingCentre(radius * 2, radius * 2), 1.5f);
     }
@@ -65,7 +72,7 @@ public:
     {
         setSize(882, 671);
         
-        // Setup existing controls
+        // setup existing controls
         addAndMakeVisible(smoothingSlider);
         smoothingSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         smoothingSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
@@ -87,7 +94,7 @@ public:
         dryGainSlider.setColour(juce::Slider::backgroundColourId, juce::Colours::transparentBlack);
         dryGainSlider.setColour(juce::Slider::thumbColourId, juce::Colours::transparentBlack);
         
-        // Setup labels
+        // setup labels
         addAndMakeVisible(tuningSpeedLabel);
         tuningSpeedLabel.setText("tuning speed", juce::dontSendNotification);
         tuningSpeedLabel.setJustificationType(juce::Justification::centred);
@@ -128,7 +135,7 @@ public:
         }
 
         // Load images
-        backgroundImage = juce::ImageCache::getFromMemory(BinaryData::lmao_png, BinaryData::lmao_pngSize);
+        backgroundImage = juce::ImageCache::getFromMemory(BinaryData::lmbg_png, BinaryData::lmbg_pngSize);
         knobImage = juce::ImageCache::getFromMemory(BinaryData::pinkpad_png, BinaryData::pinkpad_pngSize);
         sliderBackgroundImage = juce::ImageCache::getFromMemory(BinaryData::stems_png, BinaryData::stems_pngSize);
         sliderHandleImage = juce::ImageCache::getFromMemory(BinaryData::catfader_png, BinaryData::catfader_pngSize);
@@ -153,6 +160,7 @@ public:
         stopTimer();
     }
 
+    // draw everything
     void paint(juce::Graphics& g) override
     {
         if (backgroundImage.isValid())
@@ -214,7 +222,7 @@ public:
     }
 
 private:
-    // Circle of fifths configuration
+    // circle of fifths configuration
     static constexpr int circleOfFifthsCenterX = 263;
     static constexpr int circleOfFifthsCenterY = 325;
     static constexpr int circleOfFifthsRadius = 145;
@@ -222,7 +230,7 @@ private:
     
     void setupScaleButtons()
     {
-        // Circle of fifths order: C, G, D, A, E, B, Gb/F#, Db, Ab, Eb, Bb, F, (Chr in center)
+        // circle of fifths order: C, G, D, A, E, B, Gb/F#, Db, Ab, Eb, Bb, F, Chr
         const int circleOfFifthsOrder[] = {
             1,  // C Major / A Minor
             8,  // G Major / E Minor
@@ -250,12 +258,13 @@ private:
             if (button == nullptr)
                 continue;
             
+            // colors
             button->setColour(juce::TextButton::buttonColourId, juce::Colour(0x3A4702));
             button->setColour(juce::TextButton::textColourOffId, juce::Colours::white);
             button->setColour(juce::TextButton::buttonOnColourId, juce::Colours::lightcoral);
             button->setColour(juce::TextButton::textColourOnId, juce::Colours::black);
             
-            // Apply custom font to button
+            // font
             button->setLookAndFeel(&customLookAndFeel);
             
             button->setClickingTogglesState(true);
@@ -276,12 +285,12 @@ private:
                 catch (...) {}
             };
             
-            // Position in circle
+            // position in circle
             float angle = (i / 12.0f) * juce::MathConstants<float>::twoPi - juce::MathConstants<float>::halfPi;
             int x = circleOfFifthsCenterX + static_cast<int>(circleOfFifthsRadius * std::cos(angle)) - buttonSize / 2;
             int y = circleOfFifthsCenterY + static_cast<int>(circleOfFifthsRadius * std::sin(angle)) - buttonSize / 2;
             
-            // Ensure button is within bounds
+            // ensure button is within bounds
             x = juce::jlimit(0, 882 - buttonSize, x);
             y = juce::jlimit(0, 671 - buttonSize, y);
             
@@ -291,7 +300,7 @@ private:
             addAndMakeVisible(button);
         }
         
-        // Create chromatic button in the center
+        // chromatic button in center
         auto* chrButton = new juce::TextButton("chr");
         
         if (chrButton != nullptr)
@@ -301,7 +310,7 @@ private:
             chrButton->setColour(juce::TextButton::buttonOnColourId, juce::Colours::lightcoral);
             chrButton->setColour(juce::TextButton::textColourOnId, juce::Colours::black);
             
-            // Apply custom font to button
+            // apply custom font to button
             chrButton->setLookAndFeel(&customLookAndFeel);
             
             chrButton->setClickingTogglesState(true);
@@ -344,9 +353,9 @@ private:
             float normalizedValue = param->getValue();
             int currentScale = juce::roundToInt(normalizedValue * 12.0f);
             
-            // Map scale enum back to button index
+            // map scale enum back to button index
             const int scaleToButtonIndex[] = {
-                12, // Chromatic -> center button
+                12, // Chromatic
                 0,  // C
                 7,  // Db
                 2,  // D
@@ -378,7 +387,7 @@ private:
     {
         try
         {
-            // Reposition circle buttons
+            // reposition circle buttons
             for (int i = 0; i < 12 && i < scaleButtons.size(); ++i)
             {
                 if (scaleButtons[i] == nullptr)
@@ -394,7 +403,7 @@ private:
                 scaleButtons[i]->setBounds(x, y, buttonSize, buttonSize);
             }
             
-            // Reposition center chromatic button
+            // reposition center chromatic button
             if (scaleButtons.size() > 12 && scaleButtons[12] != nullptr)
             {
                 int x = circleOfFifthsCenterX - buttonSize / 2;
@@ -467,6 +476,7 @@ private:
         g.drawText("tadtune", juce::Rectangle<int>(10, 10, 200, 20), juce::Justification::left);
     }
     
+    // gets info from the main processor for the display
     void drawInfoDisplay(juce::Graphics& g)
     {
         float currentFreq = audioProcessor.getCurrentFrequency();

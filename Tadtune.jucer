@@ -12,13 +12,12 @@
             file="Source/PluginProcessor.h"/>
       <FILE id="Knvy9N" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
-    <FILE id="Ul3Lga" name="lmao.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/lmao.png"/>
-    <FILE id="DMlYHy" name="lilypad.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/lilypad.png"/>
     <FILE id="yjgD2U" name="pinkpad.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/pinkpad.png"/>
     <FILE id="CouWXv" name="Catalogue 2.0.ttf" compile="0" resource="1"
           file="../../../../../../Downloads/catalogue/Catalogue 2.0.ttf"/>
     <FILE id="r7FQYJ" name="stems.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/stems.png"/>
     <FILE id="s8PTpn" name="catfader.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/catfader.png"/>
+    <FILE id="HLhfcQ" name="lmbg.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/lmbg.png"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>

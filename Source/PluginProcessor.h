@@ -3,12 +3,15 @@
 #include "PitchDetector.h"
 #include "PhaseVocoder.h"
 
+/*
+ main audio processing and parameter management
+ */
 class TadtuneAudioProcessorEditor;
 
 class TadtuneAudioProcessor : public juce::AudioProcessor
 {
 public:
-    // Scale types (relative major/minor pairs)
+    // all possible scales
     enum class ScaleType
     {
         Chromatic = 0,
@@ -26,7 +29,6 @@ public:
         B_Major_Gs_Minor
     };
     
-    //==========================================================================
     TadtuneAudioProcessor()
         : AudioProcessor(BusesProperties()
             .withInput("Input", juce::AudioChannelSet::stereo(), true)
@@ -49,9 +51,7 @@ public:
 
     ~TadtuneAudioProcessor() override {}
 
-    //==========================================================================
-    // PREPARATION
-    //==========================================================================
+    // prepare
     void prepareToPlay(double sampleRate, int samplesPerBlock) override
     {
         pitchDetector.prepare(sampleRate);
@@ -70,45 +70,50 @@ public:
     {
     }
 
-    //==========================================================================
-    // AUDIO PROCESSING
-    //==========================================================================
+    // main flow. updates parameters, calls pitch detector and shifter, computes target ratio, applies shifting and wet/dry mix
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
     {
+        // bye denormals
         juce::ScopedNoDenormals noDenormals;
         
+        // reads current ui smoothing value
         pitchShifter.setSmoothingTime(smoothingParam->load());
         
         auto totalNumInputChannels  = getTotalNumInputChannels();
         auto totalNumOutputChannels = getTotalNumOutputChannels();
         
+        // clear first
         for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
             buffer.clear(i, 0, buffer.getNumSamples());
 
+        // read from channel 0 (mono processing)
         auto* channelData = buffer.getReadPointer(0);
         int numSamples = buffer.getNumSamples();
         
         for (int i = 0; i < numSamples; ++i)
         {
+            // run pitch detection on left channel
             pitchDetector.processSample(channelData[i]);
         }
         
+        // read detection results and update shared state
         float detectedFreq = static_cast<float>(pitchDetector.getFrequency());
         float confidence = pitchDetector.getConfidence();
-        
         currentFrequency.store(detectedFreq);
         isDetecting.store(pitchDetector.isInDetectionMode());
         
+        // compute pitch ratio. start at 1 for no correction.
         float pitchRatio = 1.0f;
         
         if (detectedFreq > 80.0f && detectedFreq < 800.0f && confidence > 0.15f)
         {
-            // Get current scale setting
+            // converts detected frequency to nearest note in the selected scale
             ScaleType scale = static_cast<ScaleType>(static_cast<int>(scaleTypeParam->load()));
-            
             float targetFreq = findNearestScaleFrequency(detectedFreq, scale);
             targetFrequency.store(targetFreq);
+            // calculate correction ratio
             pitchRatio = targetFreq / detectedFreq;
+            // clamp ratio
             pitchRatio = std::max(0.75f, std::min(1.35f, pitchRatio));
         }
         else
@@ -117,15 +122,16 @@ public:
             pitchRatio = 1.0f;
         }
         
+        // stores for ui display
         currentPitchRatio.store(pitchRatio);
+        //gives the pvoc the target ratio
         pitchShifter.setPitchShiftRatio(pitchRatio);
         
+        // wet/dry
         applyPitchCorrectionWithMix(buffer);
     }
 
-    //==========================================================================
-    // PARAMETER LAYOUT
-    //==========================================================================
+    // apvts: all the adjustable parameters
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     {
         std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
@@ -175,46 +181,42 @@ public:
                 "Bb Major / G Minor",
                 "B Major / G# Minor"
             },
-            0  // Default to Chromatic
+            0
         ));
         
         return { params.begin(), params.end() };
     }
 
-    //==========================================================================
-    // PITCH CORRECTION
-    //==========================================================================
+    // pitch correction methods
     
-    /** Find nearest frequency in the selected scale */
     float findNearestScaleFrequency(float inputFreq, ScaleType scale)
     {
         if (inputFreq <= 0.0f) return inputFreq;
         
-        // Convert to MIDI note number
+        // convert input frequency to midi number
         float midiNote = 69.0f + 12.0f * std::log2(inputFreq / 440.0f);
         
         if (scale == ScaleType::Chromatic)
         {
-            // Chromatic - snap to nearest semitone
+            //chromatic
             int roundedNote = std::round(midiNote);
             return 440.0f * std::pow(2.0f, (roundedNote - 69.0f) / 12.0f);
         }
         else
         {
-            // Get the scale degrees for this scale (uses major scale pattern)
-            // All major scales have the same pattern: W-W-H-W-W-W-H (0, 2, 4, 5, 7, 9, 11)
+            // using major scale pattern for everything
             std::vector<int> scaleDegrees = {0, 2, 4, 5, 7, 9, 11};
             
-            // Get root note offset based on scale selection
-            int rootOffset = static_cast<int>(scale) - 1; // Subtract 1 because Chromatic is 0
+            // get offset from scale selection
+            int rootOffset = static_cast<int>(scale) - 1; // subtract 1 cuz chromatic is 0
             
-            // Transpose scale degrees by root note
+            // transpose by root note
             for (auto& degree : scaleDegrees)
             {
                 degree = (degree + rootOffset) % 12;
             }
             
-            // Find nearest note in scale
+            // find nearest note in scale
             int baseNote = static_cast<int>(std::round(midiNote));
             int octave = baseNote / 12;
             int noteInOctave = baseNote % 12;
@@ -222,18 +224,17 @@ public:
             int nearestNote = findNearestNoteInScale(noteInOctave, scaleDegrees);
             int targetMidiNote = octave * 12 + nearestNote;
             
-            // Convert back to frequency
+            // convert back to frequency
             return 440.0f * std::pow(2.0f, (targetMidiNote - 69.0f) / 12.0f);
         }
     }
     
-    /** Find nearest note within an octave that belongs to the scale */
     int findNearestNoteInScale(int noteInOctave, const std::vector<int>& scaleDegrees)
     {
         int minDistance = 12;
         int nearestNote = noteInOctave;
         
-        // Check current octave
+        //check current octave
         for (int degree : scaleDegrees)
         {
             int distance = std::abs(noteInOctave - degree);
@@ -269,37 +270,43 @@ public:
         return nearestNote;
     }
     
-    /** Apply pitch correction using phase vocoder */
+    // apply pitch correction with pvoc and mix
     void applyPitchCorrectionWithMix(juce::AudioBuffer<float>& buffer)
     {
         int numSamples = buffer.getNumSamples();
         int numChannels = buffer.getNumChannels();
         
+        // get param values
         float wet = wetGain->load();
         float dry = dryGain->load();
         
         juce::AudioBuffer<float> dryBuffer(numChannels, numSamples);
         
+        // copy dry signal to mix back after pitch shift
         for (int channel = 0; channel < numChannels; ++channel)
         {
             dryBuffer.copyFrom(channel, 0, buffer, channel, 0, numSamples);
         }
         
+        // feeds samples into PhaseVocoder::processSample()
         auto* leftChannel = buffer.getWritePointer(0);
-        
         for (int i = 0; i < numSamples; ++i)
         {
             float input = leftChannel[i];
             float output = pitchShifter.processSample(input);
+            // gentle soft clip to smooth aliasing
             output = std::tanh(output * 0.95f);
+            //write wet result to left channel
             leftChannel[i] = output;
         }
         
+        // copy to other channels
         for (int channel = 1; channel < numChannels; ++channel)
         {
             buffer.copyFrom(channel, 0, buffer, 0, 0, numSamples);
         }
         
+        // wetdry
         for (int channel = 0; channel < numChannels; ++channel)
         {
             auto* wetSignal = buffer.getWritePointer(channel);
@@ -312,9 +319,6 @@ public:
         }
     }
     
-    //==========================================================================
-    // QUERY METHODS FOR UI
-    //==========================================================================
     
     float getCurrentFrequency() const { return currentFrequency.load(); }
     float getTargetFrequency() const { return targetFrequency.load(); }
@@ -368,9 +372,6 @@ public:
         return scaleNames[index];
     }
 
-    //==========================================================================
-    // BOILERPLATE
-    //==========================================================================
     
     const juce::String getName() const override { return "Tadtune"; }
     bool acceptsMidi() const override { return false; }
