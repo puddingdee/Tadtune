@@ -13,11 +13,11 @@
       <FILE id="Knvy9N" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
     <FILE id="yjgD2U" name="pinkpad.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/pinkpad.png"/>
-    <FILE id="CouWXv" name="Catalogue 2.0.ttf" compile="0" resource="1"
-          file="../../../../../../Downloads/catalogue/Catalogue 2.0.ttf"/>
     <FILE id="r7FQYJ" name="stems.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/stems.png"/>
     <FILE id="s8PTpn" name="catfader.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/catfader.png"/>
     <FILE id="HLhfcQ" name="lmbg.png" compile="0" resource="1" file="../../../temple/fall_2025/capstone/gui assets/lmbg.png"/>
+    <FILE id="IuCMvb" name="F25_Bank_Printer.ttf" compile="0" resource="1"
+          file="../../../../../../Downloads/f25_bank_printer/F25_Bank_Printer.ttf"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>

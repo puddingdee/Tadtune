@@ -11,9 +11,6 @@ namespace BinaryData
     extern const char*   pinkpad_png;
     const int            pinkpad_pngSize = 5982915;
 
-    extern const char*   Catalogue_2_0_ttf;
-    const int            Catalogue_2_0_ttfSize = 27948;
-
     extern const char*   stems_png;
     const int            stems_pngSize = 4968865;
 
@@ -22,6 +19,9 @@ namespace BinaryData
 
     extern const char*   lmbg_png;
     const int            lmbg_pngSize = 5829447;
+
+    extern const char*   F25_Bank_Printer_ttf;
+    const int            F25_Bank_Printer_ttfSize = 188996;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 5;

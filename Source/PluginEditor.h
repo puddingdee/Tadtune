@@ -5,7 +5,7 @@
 /*
  ui implementation. requires 5 files to build:
  pinkpad.png
- Catalogue 2.0.ttf
+ F25_Bank_Printer.ttf
  stems.png
  catfader.png
  lmbg.png
@@ -18,8 +18,8 @@ class CustomLookAndFeel : public juce::LookAndFeel_V4
 public:
     CustomLookAndFeel()
     {
-        customTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::Catalogue_2_0_ttf,
-                                                                  BinaryData::Catalogue_2_0_ttfSize);
+        customTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::F25_Bank_Printer_ttf,
+                                                                  BinaryData::F25_Bank_Printer_ttfSize);
         setDefaultSansSerifTypeface(customTypeface);
     }
     
@@ -30,7 +30,12 @@ public:
     
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override
     {
-        return juce::Font(customTypeface).withHeight(11.0f);
+        return juce::Font(customTypeface).withHeight(10.0f);
+    }
+    
+    juce::Font getLabelFont(juce::Label&) override
+    {
+        return juce::Font(customTypeface);
     }
     
     // circle buttons
@@ -70,6 +75,8 @@ public:
           wetGainAttachment(audioProcessor.getParameters(), "wet gain", wetGainSlider),
           dryGainAttachment(audioProcessor.getParameters(), "dry gain", dryGainSlider)
     {
+        setLookAndFeel(&customLookAndFeel);
+        
         setSize(882, 671);
         
         // setup existing controls
@@ -99,31 +106,31 @@ public:
         tuningSpeedLabel.setText("tuning speed", juce::dontSendNotification);
         tuningSpeedLabel.setJustificationType(juce::Justification::centred);
         tuningSpeedLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        tuningSpeedLabel.setFont(juce::Font(14.0f));
+        tuningSpeedLabel.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
         
         addAndMakeVisible(valueDisplayLabel);
         valueDisplayLabel.setJustificationType(juce::Justification::centred);
         valueDisplayLabel.setColour(juce::Label::textColourId, juce::Colours::cyan);
-        valueDisplayLabel.setFont(juce::Font(12.0f));
+        valueDisplayLabel.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(12.0f));
         
         addAndMakeVisible(wetLabel);
         wetLabel.setText("wet", juce::dontSendNotification);
         wetLabel.setJustificationType(juce::Justification::centred);
         wetLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        wetLabel.setFont(juce::Font(14.0f));
+        wetLabel.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
         
         addAndMakeVisible(dryLabel);
         dryLabel.setText("dry", juce::dontSendNotification);
         dryLabel.setJustificationType(juce::Justification::centred);
         dryLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        dryLabel.setFont(juce::Font(14.0f));
+        dryLabel.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
 
         // Setup scale section label
         addAndMakeVisible(scaleLabel);
         scaleLabel.setText("scale select", juce::dontSendNotification);
         scaleLabel.setJustificationType(juce::Justification::centred);
         scaleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        scaleLabel.setFont(juce::Font(14.0f));
+        scaleLabel.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
 
         try
         {
@@ -150,8 +157,6 @@ public:
         {
             updateScaleButtonStates();
         }
-        
-        setLookAndFeel(&customLookAndFeel);
     }
 
     ~TadtuneAudioProcessorEditor() override
@@ -213,7 +218,7 @@ public:
         wetLabel.setBounds(wetSliderBounds.getX(), wetSliderBounds.getBottom() + 5, wetSliderBounds.getWidth(), 20);
         dryLabel.setBounds(drySliderBounds.getX(), drySliderBounds.getBottom() + 5, drySliderBounds.getWidth(), 20);
         
-        scaleLabel.setBounds(circleOfFifthsCenterX - 210, circleOfFifthsCenterY - circleOfFifthsRadius - 40, 150, 20);
+        scaleLabel.setBounds(circleOfFifthsCenterX - 80, circleOfFifthsCenterY - circleOfFifthsRadius - 70, 150, 20);
         
         if (scaleButtons.size() > 0)
         {
@@ -226,7 +231,7 @@ private:
     static constexpr int circleOfFifthsCenterX = 263;
     static constexpr int circleOfFifthsCenterY = 325;
     static constexpr int circleOfFifthsRadius = 145;
-    static constexpr int buttonSize = 60;
+    static constexpr int buttonSize = 70;
     
     void setupScaleButtons()
     {
@@ -301,7 +306,7 @@ private:
         }
         
         // chromatic button in center
-        auto* chrButton = new juce::TextButton("chr");
+        auto* chrButton = new juce::TextButton("chrom");
         
         if (chrButton != nullptr)
         {
@@ -471,9 +476,9 @@ private:
     
     void drawPluginInfo(juce::Graphics& g)
     {
-        g.setFont(juce::Font(16.0f));
+        g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(16.0f));
         g.setColour(juce::Colours::white);
-        g.drawText("tadtune", juce::Rectangle<int>(10, 10, 200, 20), juce::Justification::left);
+        g.drawText("tad~tune", juce::Rectangle<int>(10, 10, 200, 20), juce::Justification::left);
     }
     
     // gets info from the main processor for the display
@@ -494,22 +499,22 @@ private:
         if (currentMidiNote >= 0 && targetMidiNote >= 0)
         {
             g.setColour(juce::Colours::yellow);
-            g.setFont(juce::Font(16.0f));
+            g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(16.0f));
             g.drawText(currentNoteName, noteArea.removeFromTop(20), juce::Justification::centred);
             
             g.setColour(juce::Colours::white);
-            g.setFont(juce::Font(14.0f));
+            g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
             g.drawText("|", noteArea.removeFromTop(15), juce::Justification::centred);
             
             g.setColour(juce::Colours::limegreen);
-            g.setFont(juce::Font(16.0f));
+            g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(16.0f));
             g.drawText(targetNoteName, noteArea.removeFromTop(20), juce::Justification::centred);
             
             if (std::abs(pitchRatio - 1.0f) > 0.001f)
             {
                 float cents = 1200.0f * std::log2(pitchRatio);
                 g.setColour(juce::Colours::cyan);
-                g.setFont(juce::Font(12.0f));
+                g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(12.0f));
                 juce::String centsText = juce::String(cents > 0 ? "+" : "") + juce::String(cents, 0) + " ¢";
                 g.drawText(centsText, noteArea, juce::Justification::centred);
             }
@@ -517,7 +522,7 @@ private:
         else
         {
             g.setColour(juce::Colours::grey);
-            g.setFont(juce::Font(14.0f));
+            g.setFont(juce::Font(customLookAndFeel.getTypefaceForFont(juce::Font())).withHeight(14.0f));
             g.drawText("no correction", displayArea, juce::Justification::centred);
         }
     }
